@@ -1,0 +1,22 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/adeola/CMP9767-Assessment/build/limo_assessment",
+        "/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages",
+        "/home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages",
+        "/home/adeola/Documents/limo_ros2/build/voice_control",
+        "/home/adeola/Documents/limo_ros2/install/local/lib/python3.10/dist-packages",
+        "/home/adeola/Documents/limo_ros2/install/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/adeola/CMP9767-Assessment/build/limo_assessment",
+        "/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages",
+        "/home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages",
+        "/home/adeola/Documents/limo_ros2/build/voice_control",
+        "/home/adeola/Documents/limo_ros2/install/local/lib/python3.10/dist-packages",
+        "/home/adeola/Documents/limo_ros2/install/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

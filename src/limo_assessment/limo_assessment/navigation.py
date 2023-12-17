@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+
+class Navigation(Node):
+    def __init__(self):
+        super().__init__('navigation')
+        self.cmd_vel_pub = self.create_publisher(Twist,'/cmd_vel', 10)
+        self.timer_= self.create_timer(0.5, self.send_velocity_command)
+        self.get_logger().info('navigation node has been started')
+    
+    def send_velocity_command(self):
+        msg = Twist()
+        msg.linear.x = 0.5
+        self.cmd_vel_pub.publish(msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    #node
+    node = Navigation()
+    #To keep the node alive and running forever until you kill it with ctrl+c
+    rclpy.spin(node)
+    #lastline
+    rclpy.shutdown()

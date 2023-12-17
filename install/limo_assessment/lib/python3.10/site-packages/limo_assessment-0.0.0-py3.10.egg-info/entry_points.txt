@@ -1,0 +1,7 @@
+[console_scripts]
+HSV_pothole_detector = limo_assessment.pothole_detectorHSV:main
+draw_circle = limo_assessment.draw_circle:main
+navigation = limo_assessment.navigation:main
+pothole_detector = limo_assessment.pothole_detector:main
+test_node = limo_assessment.my_first_node:main
+

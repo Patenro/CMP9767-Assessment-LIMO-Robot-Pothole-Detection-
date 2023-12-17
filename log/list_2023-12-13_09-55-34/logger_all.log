@@ -1,0 +1,56 @@
+[0.791s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'list', '-p', '--base-paths', '/home/adeola/CMP9767-Assessment']
+[0.791s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='list', build_base='build', ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['/home/adeola/CMP9767-Assessment'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], topological_order=False, names_only=False, paths_only=True, topological_graph=False, topological_graph_dot=False, topological_graph_density=False, topological_graph_legend=False, topological_graph_dot_cluster=False, topological_graph_dot_include_skipped=False, verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x7fbcf4d2e440>, verb_extension=<colcon_package_information.verb.list.ListVerb object at 0x7fbcf4eb65c0>, main=<bound method ListVerb.main of <colcon_package_information.verb.list.ListVerb object at 0x7fbcf4eb65c0>>)
+[0.843s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.843s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.843s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.843s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.843s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.843s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/adeola/CMP9767-Assessment'
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['ignore', 'ignore_ament_install']
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'ignore'
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'ignore_ament_install'
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['colcon_pkg']
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'colcon_pkg'
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['colcon_meta']
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'colcon_meta'
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['ros']
+[0.843s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'ros'
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['cmake', 'python']
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'cmake'
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'python'
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extensions ['python_setup_py']
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment) by extension 'python_setup_py'
+[0.855s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/build) by extensions ['ignore', 'ignore_ament_install']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/build) by extension 'ignore'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/build) ignored
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/install) by extensions ['ignore', 'ignore_ament_install']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/install) by extension 'ignore'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/install) ignored
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/log) by extensions ['ignore', 'ignore_ament_install']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/log) by extension 'ignore'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/log) ignored
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['ignore', 'ignore_ament_install']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'ignore'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'ignore_ament_install'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['colcon_pkg']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'colcon_pkg'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['colcon_meta']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'colcon_meta'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['ros']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'ros'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['cmake', 'python']
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'cmake'
+[0.856s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'python'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extensions ['python_setup_py']
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src) by extension 'python_setup_py'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extensions ['ignore', 'ignore_ament_install']
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extension 'ignore'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extension 'ignore_ament_install'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extensions ['colcon_pkg']
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extension 'colcon_pkg'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extensions ['colcon_meta']
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extension 'colcon_meta'
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extensions ['ros']
+[0.857s] Level 1:colcon.colcon_core.package_identification:_identify(/home/adeola/CMP9767-Assessment/src/limo_assessment) by extension 'ros'
+[0.860s] DEBUG:colcon.colcon_core.package_identification:Package '/home/adeola/CMP9767-Assessment/src/limo_assessment' with type 'ros.ament_python' and name 'limo_assessment'
+[0.860s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults

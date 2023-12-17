@@ -1,0 +1,35 @@
+[0.590s] Invoking command in '/home/adeola/CMP9767-Assessment/src/LIMO_Assessment': PYTHONPATH=/home/adeola/CMP9767-Assessment/build/LIMO_Assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/LIMO_Assessment build --build-base /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build install --record /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/install.log --single-version-externally-managed
+[0.770s] running egg_info
+[0.770s] creating ../../build/LIMO_Assessment/LIMO_Assessment.egg-info
+[0.770s] writing ../../build/LIMO_Assessment/LIMO_Assessment.egg-info/PKG-INFO
+[0.771s] writing dependency_links to ../../build/LIMO_Assessment/LIMO_Assessment.egg-info/dependency_links.txt
+[0.771s] writing entry points to ../../build/LIMO_Assessment/LIMO_Assessment.egg-info/entry_points.txt
+[0.771s] writing requirements to ../../build/LIMO_Assessment/LIMO_Assessment.egg-info/requires.txt
+[0.771s] writing top-level names to ../../build/LIMO_Assessment/LIMO_Assessment.egg-info/top_level.txt
+[0.771s] writing manifest file '../../build/LIMO_Assessment/LIMO_Assessment.egg-info/SOURCES.txt'
+[0.772s] reading manifest file '../../build/LIMO_Assessment/LIMO_Assessment.egg-info/SOURCES.txt'
+[0.773s] writing manifest file '../../build/LIMO_Assessment/LIMO_Assessment.egg-info/SOURCES.txt'
+[0.773s] running build
+[0.773s] running build_py
+[0.773s] creating /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build
+[0.773s] creating /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build/lib
+[0.773s] creating /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build/lib/LIMO_Assessment
+[0.773s] copying LIMO_Assessment/__init__.py -> /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build/lib/LIMO_Assessment
+[0.773s] /usr/lib/python3/dist-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+[0.773s]   warnings.warn(
+[0.773s] running install
+[0.773s] running install_lib
+[0.774s] creating /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages/LIMO_Assessment
+[0.774s] copying /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build/lib/LIMO_Assessment/__init__.py -> /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages/LIMO_Assessment
+[0.774s] byte-compiling /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages/LIMO_Assessment/__init__.py to __init__.cpython-310.pyc
+[0.774s] running install_data
+[0.775s] creating /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/share/ament_index
+[0.775s] creating /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/share/ament_index/resource_index
+[0.775s] creating /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/share/ament_index/resource_index/packages
+[0.775s] copying resource/LIMO_Assessment -> /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/share/ament_index/resource_index/packages
+[0.775s] copying package.xml -> /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/share/LIMO_Assessment
+[0.775s] running install_egg_info
+[0.776s] Copying ../../build/LIMO_Assessment/LIMO_Assessment.egg-info to /home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages/LIMO_Assessment-0.0.0-py3.10.egg-info
+[0.776s] running install_scripts
+[0.791s] writing list of installed files to '/home/adeola/CMP9767-Assessment/build/LIMO_Assessment/install.log'
+[0.811s] Invoked command in '/home/adeola/CMP9767-Assessment/src/LIMO_Assessment' returned '0': PYTHONPATH=/home/adeola/CMP9767-Assessment/build/LIMO_Assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/LIMO_Assessment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/LIMO_Assessment build --build-base /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/build install --record /home/adeola/CMP9767-Assessment/build/LIMO_Assessment/install.log --single-version-externally-managed
