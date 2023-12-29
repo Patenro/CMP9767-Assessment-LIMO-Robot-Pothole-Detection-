@@ -7,6 +7,7 @@ from sensor_msgs.msg import Image
 from nav_msgs.msg import OccupancyGrid
 from cv_bridge import CvBridge
 
+
 class ColorMappingNode(Node):
     def __init__(self):
         super().__init__('color_mapping_node')
@@ -14,7 +15,7 @@ class ColorMappingNode(Node):
         # Initialize the centroid tracker and other variables
         self.ct = cv2.TrackerCSRT_create()
         self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
-        self.color_counts = {'red': 0, 'green': 0, 'blue': 0}
+        self.color_counts = {'red': 0, 'green': 0, 'blue': 0, 'custom_color': 0}
 
         # Subscribe to the camera image topic
         self.image_subscription = self.create_subscription(
@@ -28,7 +29,7 @@ class ColorMappingNode(Node):
         # Publisher for the occupancy grid map
         self.map_publisher = self.create_publisher(
             OccupancyGrid,
-            "/map",
+            "/map_new",
             10
         )
 
@@ -48,6 +49,7 @@ class ColorMappingNode(Node):
         for color, rgb in self.colors.items():
             lower = np.array([150, 50, 50], dtype=np.uint8)
             upper = np.array([170, 255, 255], dtype=np.uint8)
+            
             mask = cv2.inRange(hsv, lower, upper)
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -72,16 +74,30 @@ class ColorMappingNode(Node):
         print("Sum Total:", sum_total)
 
     def create_occupancy_grid(self, frame):
-        # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Get the dimensions of the frame
+        height, width, _ = frame.shape
+
+        # Create an empty occupancy grid map
+        occupancy_map = np.zeros((height, width), dtype=np.int8)
+
+        # Iterate over each pixel in the frame
+        for y in range(height):
+            for x in range(width):
+                pixel = frame[y, x]
+                for color, rgb in self.colors.items():
+                    if np.array_equal(pixel, rgb):
+                        occupancy_map[y, x] = 100  # Set cell as occupied
+                        break
+                else:
+                    occupancy_map[y, x] = -1  # Set cell as unknown
 
         # Create an OccupancyGrid message
         occupancy_grid = OccupancyGrid()
         occupancy_grid.header.stamp = self.get_clock().now().to_msg()
         occupancy_grid.header.frame_id = "map"
         occupancy_grid.info.resolution = 0.05  # Adjust as needed
-        occupancy_grid.info.width = gray.shape[1]
-        occupancy_grid.info.height = gray.shape[0]
+        occupancy_grid.info.width = width
+        occupancy_grid.info.height = height
         occupancy_grid.info.origin.position.x = 0.0
         occupancy_grid.info.origin.position.y = 0.0
         occupancy_grid.info.origin.position.z = 0.0
@@ -90,17 +106,9 @@ class ColorMappingNode(Node):
         occupancy_grid.info.origin.orientation.z = 0.0
         occupancy_grid.info.origin.orientation.w = 1.0
 
-        # Convert the grayscale image to occupancy grid data
-        data = []
-        for row in gray:
-            row_data = []
-            for pixel in row:
-                if pixel == 0:
-                    row_data.append(-1)  # Unknown
-                else:
-                    row_data.append(100)  # Occupied
-            data.extend(row_data)
-        occupancy_grid.data = data
+        # Convert the occupancy map to a 1D array
+        occupancy_data = occupancy_map.flatten().tolist()
+        occupancy_grid.data = occupancy_data
 
         return occupancy_grid
 

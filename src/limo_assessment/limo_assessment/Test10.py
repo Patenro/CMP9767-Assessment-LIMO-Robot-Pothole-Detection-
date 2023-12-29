@@ -1,184 +1,117 @@
 #!/usr/bin/env python3
+import rclpy
 import cv2
 import numpy as np
-import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, LaserScan
-from nav_msgs.msg import OccupancyGrid
+from rclpy import qos
+from cv2 import namedWindow, cvtColor, imshow, inRange
+
+from cv2 import destroyAllWindows, startWindowThread
+from cv2 import COLOR_BGR2GRAY, waitKey
+from cv2 import blur, Canny, resize, INTER_CUBIC
+from numpy import mean
+from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import yaml
-import os
 
-class ColorMappingNode(Node):
+font = cv2.FONT_HERSHEY_SIMPLEX
+
+class ImageConverter(Node):
     def __init__(self):
-        super().__init__('color_mapping_node')
-
-        # Initialize the centroid tracker and other variables
-        self.ct = cv2.TrackerCSRT_create()
-        self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
-        self.color_counts = {'red': 0, 'green': 0, 'blue': 0}
-
-        # Subscribe to the camera image topic
-        self.image_subscription = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/image_raw",
-            self.image_callback,
-            10
-        )
-        self.image_subscription  # Prevent unused variable warning
-
-        # Subscribe to the LIDAR scan topic
-        self.scan_subscription = self.create_subscription(
-            LaserScan,
-            "/limo/lidar",
-            self.scan_callback,
-            10
-        )
-        self.scan_subscription  # Prevent unused variable warning
-
-        # Publisher for the occupancy grid map
-        self.map_publisher = self.create_publisher(
-            OccupancyGrid,
-            "/map",
-            10
-        )
-
+        super().__init__('opencv_test')
         self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/image_raw',
+            self.image_callback,
+            qos.qos_profile_sensor_data
+        )
+        self.subscription  # prevent unused variable warning
+        self.unique_colors = {}
 
-        # Map variables
-        self.map_resolution = 0.05  # Adjust as needed
-        self.map_size_x = 1000  # Adjust as needed
-        self.map_size_y = 1000  # Adjust as needed
-        self.map = np.zeros((self.map_size_x, self.map_size_y), dtype=np.uint8)
+    def search_contours(self, mask):
+        contours_count = 0
+        contours_area = []
+
+        contours, hierarchy = cv2.findContours(
+            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        for contour in contours:
+            cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
+
+            area = cv2.contourArea(contour)
+            contours_area.append(area)
+
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+            else:
+                cX, cY = 0, 0
+            cv2.putText(
+                self.cv_image,
+                f"{contours_count}",
+                (cX - 25, cY - 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                2,
+            )
+
+            contours_count += 1
+
+        return contours_count, contours_area
 
     def image_callback(self, msg):
-        # Convert the ROS Image message to a BGR image
-        frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        namedWindow("Image window")
+        namedWindow("Masked")
 
-        # Convert the frame to HSV color space
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.cv_image = resize(
+            self.cv_image, None, fx=1, fy=1, interpolation=INTER_CUBIC
+        )
 
-        # Initialize the sum total
-        sum_total = 0
+        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
 
-        # Detect colors in the frame
-        for color, rgb in self.colors.items():
-            lower = np.array([150, 50, 50], dtype=np.uint8)
-            upper = np.array([170, 255, 255], dtype=np.uint8)
-            mask = cv2.inRange(hsv, lower, upper)
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        lower_pink = np.array([150, 50, 50])
+        upper_pink = np.array([170, 255, 255])
 
-            # Update color counts using contour areas
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area > 100:  # Adjust the area threshold as needed
-                    self.color_counts[color] += 1
-                    sum_total += 1
-                    x, y, w, h = cv2.boundingRect(contour)
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), rgb, 2)
+        mask = cv2.inRange(hsv, lower_pink, upper_pink)
 
-        # Publish the occupancy grid map
-        occupancy_grid = self.create_occupancy_grid(frame)
-        self.map_publisher.publish(occupancy_grid)
+        count, areas = self.search_contours(mask)
 
-        # Display the frame
-        cv2.imshow("Frame", frame)
-        cv2.waitKey(1)
+        imshow("Image window", self.cv_image)
+        imshow("Masked", mask)
 
-        # Print the sum total
-        print("Sum Total:", sum_total)
+        waitKey(1)
 
-    def scan_callback(self, msg):
-        # Calculate the map indices for each LIDAR point
-        x_values = np.array([msg.ranges[i] * np.cos(msg.angle_min + i * msg.angle_increment)
-                            for i in range(len(msg.ranges))])
-        y_values = np.array([msg.ranges[i] * np.sin(msg.angle_min + i * msg.angle_increment)
-                            for i in range(len(msg.ranges))])
-        indices_x = np.round((self.map_size_x / 2) - (x_values / self.map_resolution)).astype(int)
-        indices_y = np.round((self.map_size_y / 2) + (y_values / self.map_resolution)).astype(int)
+        print("Number of contours:", count)
+        print("Areas of contours:", areas)
 
-        # Update the map with occupied points
-        self.map[indices_x, indices_y] = 255
+        # Count and track unique colors
+        contours, _ = cv2.findContours(
+            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
-    def create_occupancy_grid(self, frame):
-        # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area > 100:  # Adjust the area threshold as needed
+                x, y, w, h = cv2.boundingRect(contour)
+                centroid_x = x + (w // 2)
+                centroid_y = y + (h // 2)
+                pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
+                if pixel_color not in self.unique_colors:
+                    self.unique_colors[pixel_color] = 1
 
-        # Create an OccupancyGrid message
-        occupancy_grid = OccupancyGrid()
-        occupancy_grid.header.stamp = self.get_clock().now().to_msg()
-        occupancy_grid.header.frame_id = "map"
-        occupancy_grid.info.resolution = self.map_resolution
-        occupancy_grid.info.width = self.map_size_x
-        occupancy_grid.info.height = self.map_size_y
-        occupancy_grid.info.origin.position.x = -self.map_size_x * self.map_resolution / 2
-        occupancy_grid.info.origin.position.y = -self.map_size_y * self.map_resolution / 2
-        occupancy_grid.info.origin.position.z = 0.0
-        occupancy_grid.info.origin.orientation.x = 0.0
-        occupancy_grid.info.origin.orientation.y = 0.0
-        occupancy_grid.info.origin.orientation.z = 0.0
-        occupancy_grid.info.origin.orientation.w = 1.0
-
-        # Convert the grayscale image to occupancy grid data
-        data = []
-        for row in gray:
-            row_data = []
-            for pixel in row:
-                if pixel == 0:
-                    row_data.append(-1)  # Unknown
-                else:
-                    row_data.append(100)  # Occupied
-            data.extend(row_data)
-        occupancy_grid.data = data
-
-        return occupancy_grid
-
-
-
-    def save_map(self):
-        # Create a map visualization
-        map_visualization = np.zeros((self.map_size_x, self.map_size_y), dtype=np.uint8)
-        map_visualization[self.map == 0] = 255  # Free space (white)
-        map_visualization[self.map == 255] = 0  # Occupied space (black)
-
-        # Save the map as a PGM file
-        map_filename = os.path.join(os.path.dirname(__file__), "map.pgm")
-        with open(map_filename, "wb") as pgm_file:
-            pgm_file.write(b'P5\n')
-            pgm_file.write(f'{self.map_size_x} {self.map_size_y}\n'.encode())
-            pgm_file.write(b'255\n')
-            pgm_file.write(map_visualization.tobytes())
-
-        # Save the map as a YAML file
-        yaml_data = {
-            'image': 'map.pgm',
-            'resolution': self.map_resolution,
-            'origin': [-self.map_size_x * self.map_resolution / 2, -self.map_size_y * self.map_resolution / 2, 0.0],
-            'negate': 0,
-            'occupied_thresh': 0.65,
-            'free_thresh': 0.196
-        }
-
-        yaml_filename = os.path.join(os.path.dirname(__file__), "map.yaml")
-        with open(yaml_filename, "w") as yaml_file:
-            yaml.dump(yaml_data, yaml_file)
-
-    def run(self):
-        rclpy.spin(self)
-
-        # Find the color with the maximum count
-        max_count_color = max(self.color_counts, key=self.color_counts.get)
-        max_count = self.color_counts[max_count_color]
-        print(f"The color with the maximum count is {max_count_color} with a count of {max_count}.")
-
-        # Save the map
-        self.save_map()
+        unique_colors_count = len(self.unique_colors)
+        print("Number of unique colors:", unique_colors_count)
 
 def main(args=None):
     rclpy.init(args=args)
-    color_mapping_node = ColorMappingNode()
-    color_mapping_node.run()
-    color_mapping_node.destroy_node()
+    image_converter = ImageConverter()
+    rclpy.spin(image_converter)
+
+    image_converter.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':

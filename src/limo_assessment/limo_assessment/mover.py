@@ -31,7 +31,7 @@ class Mover(Node):
         if min_dist < 0.5:
             t.angular.z = -0.5
         else:
-            t.linear.x = 0.5
+            t.linear.x = 0.2
         self.publisher.publish(t)
 
 
