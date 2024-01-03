@@ -137,8 +137,8 @@ class ImageConverter(Node):
         cv2.imshow("Masked", mask)
         cv2.waitKey(1)
 
-        print("Areas of contours:", areas)
-        print("Severities of contours:", severities)
+        #print("Areas of contours:", areas)
+        #print("Severities of contours:", severities)
 
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)

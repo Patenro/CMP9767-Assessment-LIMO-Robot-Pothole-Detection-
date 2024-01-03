@@ -35,12 +35,8 @@ class ImageConverter(Node):
         self.unique_colors = {}
 
     def search_contours(self, mask):
+        contours_count = 0
         contours_area = []
-        severities = []
-
-        # Create colormap ranging from yellow to red
-        colormap = cv2.applyColorMap(np.arange(256, dtype=np.uint8).reshape(1, -1), cv2.COLORMAP_JET)
-        colormap = colormap.squeeze()
 
         contours, hierarchy = cv2.findContours(
             mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
@@ -51,6 +47,7 @@ class ImageConverter(Node):
 
         for contour in contours:
             cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
+            contours_count += 1
 
             area = cv2.contourArea(contour)
             contours_area.append(area)
@@ -61,7 +58,15 @@ class ImageConverter(Node):
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
-
+            cv2.putText(
+                self.cv_image,
+                f"{contours_count}",
+                (cX - 25, cY - 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                2,
+            )
 
             # Add point at the center of the contour
             cv2.circle(self.cv_image, (cX, cY), 5, (0, 0, 255), -1)
@@ -72,7 +77,7 @@ class ImageConverter(Node):
                 cv2.putText(
                     self.cv_image,
                     f"{distance_mm:.2f}mm",
-                    (cX + 10, cY + 50),
+                    (cX + 10, cY + 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (255, 255, 255),
@@ -84,25 +89,6 @@ class ImageConverter(Node):
                     closest_distance = distance_mm
                     closest_contour = contour
 
-            severities.append(area)
-
-            # Normalize severity value to range [0, 255]
-            normalized_severity = int(area * 255 / max(severities))
-
-            # Get color from colormap based on normalized severity
-            color = tuple(map(int, colormap[normalized_severity]))
-
-            # Display severity value on the image with color intensity
-            cv2.putText(
-                self.cv_image,
-                f"Severity: {area:.2f}",
-                (cX + 10, cY + 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                color,
-                2,
-            )
-
             # Count and track unique colors
             if area > 100:  # Adjust the area threshold as needed
                 x, y, w, h = cv2.boundingRect(contour)
@@ -112,7 +98,10 @@ class ImageConverter(Node):
                 if pixel_color not in self.unique_colors:
                     self.unique_colors[pixel_color] = 1
 
-        return  contours, contours_area, severities,closest_contour
+        unique_colors_count = len(self.unique_colors)
+        print("Number of unique colors:", unique_colors_count)
+
+        return contours_count, contours_area, closest_contour
 
     def image_callback(self, data):
         namedWindow("Image window")
@@ -131,14 +120,14 @@ class ImageConverter(Node):
 
         mask = cv2.inRange(hsv, lower_pink, upper_pink)
 
-        count, areas, severities, closest_contour = self.search_contours(mask)
+        count, areas, closest_contour = self.search_contours(mask)
 
         cv2.imshow("Image window", self.cv_image)
         cv2.imshow("Masked", mask)
         cv2.waitKey(1)
 
+        print("Number of contours:", count)
         print("Areas of contours:", areas)
-        print("Severities of contours:", severities)
 
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
