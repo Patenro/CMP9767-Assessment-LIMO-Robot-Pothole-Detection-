@@ -67,8 +67,8 @@ class ColorMappingNode(Node):
         self.map_publisher.publish(occupancy_grid)
 
         # Display the frame
-        cv2.imshow("Frame", frame)
-        cv2.waitKey(1)
+        #cv2.imshow("Frame", frame)
+        #cv2.waitKey(1)
 
         # Print the sum total
         print("Sum Total:", sum_total)

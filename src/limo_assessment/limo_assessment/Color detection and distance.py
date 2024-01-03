@@ -1,138 +1,172 @@
 #!/usr/bin/env python3
-import rclpy
 import cv2
 import numpy as np
+import rclpy
 from rclpy.node import Node
-from rclpy import qos
-from cv2 import namedWindow, cvtColor, imshow, inRange
-from cv2 import destroyAllWindows, startWindowThread
-from cv2 import COLOR_BGR2HSV, blur, Canny, resize, INTER_CUBIC
-from numpy import mean
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PointStamped, TransformStamped
+from nav_msgs.msg import Odometry
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_ros import StaticTransformBroadcaster, Buffer
+from tf2_geometry_msgs import do_transform_pose
+import image_geometry
 
-font = cv2.FONT_HERSHEY_SIMPLEX
-
-
-class ImageConverter(Node):
+class ColorMappingNode(Node):
     def __init__(self):
-        super().__init__("opencv_test")
+        super().__init__('color_mapping_node')
+
         self.bridge = CvBridge()
-        self.image_sub = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/image_raw",
-            self.image_callback,
-            qos_profile=qos.qos_profile_sensor_data,
-        )  # Set QoS Profile
+        self.camera_model = None
+        self.image_depth_ros = None
 
-        self.depth_sub = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/depth/image_raw",
-            self.depth_callback,
-            qos_profile=qos.qos_profile_sensor_data,
-        )  # Set QoS Profile
+        # Color range for detection
+        self.lower_color = np.array([150, 50, 50], dtype=np.uint8)
+        self.upper_color = np.array([170, 255, 255], dtype=np.uint8)
 
-        self.depth_image = None
-        self.unique_colors = {}
-
-    def search_contours(self, mask):
-        contours_count = 0
-        contours_area = []
-
-        contours, hierarchy = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        # Subscribe to camera info, color image, and depth image topics
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            '/limo/depth_camera_link/camera_info',
+            self.camera_info_callback,
+            10
         )
 
-        for contour in contours:
-            cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
-            contours_count += 1
-
-            area = cv2.contourArea(contour)
-            contours_area.append(area)
-
-            M = cv2.moments(contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-            else:
-                cX, cY = 0, 0
-            cv2.putText(
-                self.cv_image,
-                f"{contours_count}",
-                (cX - 25, cY - 25),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-                2,
-            )
-
-            # Add point at the center of the contour
-            cv2.circle(self.cv_image, (cX, cY), 5, (0, 0, 255), -1)
-
-            if self.depth_image is not None:
-                depth_at_center = self.depth_image[cY, cX]
-                distance_mm = depth_at_center * 1000  # Convert to millimeters
-                cv2.putText(
-                    self.cv_image,
-                    f"{distance_mm:.2f}mm",
-                    (cX + 10, cY + 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 255),
-                    2,
-                )
-
-            # Count and track unique colors
-            if area > 100:  # Adjust the area threshold as needed
-                x, y, w, h = cv2.boundingRect(contour)
-                centroid_x = x + (w // 2)
-                centroid_y = y + (h // 2)
-                pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
-                if pixel_color not in self.unique_colors:
-                    self.unique_colors[pixel_color] = 1
-
-        unique_colors_count = len(self.unique_colors)
-        print("Number of unique colors:", unique_colors_count)
-
-        return contours_count, contours_area
-
-    def image_callback(self, data):
-        namedWindow("Image window")
-        namedWindow("Masked")
-        #namedWindow("Distance")
-
-        self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        self.cv_image = resize(
-            self.cv_image, None, fx=1, fy=1, interpolation=INTER_CUBIC
+        self.image_color_sub = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/image_raw',
+            self.image_color_callback,
+            10
         )
 
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
+        self.image_depth_sub = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/depth/image_raw',
+            self.image_depth_callback,
+            10
+        )
 
-        lower_pink = np.array([150, 50, 50])
-        upper_pink = np.array([170, 255, 255])
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )
 
-        mask = cv2.inRange(hsv, lower_pink, upper_pink)
+        # Publisher for color locations
+        self.color_location_pub = self.create_publisher(
+            PointStamped,
+            '/limo/color_location',
+            10
+        )
 
-        count, areas = self.search_contours(mask)
+        # TF Broadcaster for static transforms
+        self.tf_broadcaster = StaticTransformBroadcaster(self)
+        self.tf_buffer = Buffer()
 
-        cv2.imshow("Image window", self.cv_image)
-        cv2.imshow("Masked", mask)
-        cv2.waitKey(1)
+        self.odom_coords = None
 
-        print("Number of contours:", count)
-        print("Areas of contours:", areas)
+    def camera_info_callback(self, data):
+        if not self.camera_model:
+            self.camera_model = image_geometry.PinholeCameraModel()
+        self.camera_model.fromCameraInfo(data)
 
-    def depth_callback(self, data):
-        self.depth_image = self.bridge.imgmsg_to_cv2(data)
+    def image_depth_callback(self, data):
+        self.image_depth_ros = data
 
+    def image_color_callback(self, data):
+        # Wait for camera_model and depth image to arrive
+        if self.camera_model is None or self.image_depth_ros is None:
+            return
+
+        try:
+            image_color = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            image_depth = self.bridge.imgmsg_to_cv2(self.image_depth_ros, "32FC1")
+        except CvBridgeError as e:
+            print("Error converting images:", str(e))
+            return
+
+        # Process color blob
+        result = self.process_color_blob(image_color, image_depth)
+        if result:
+            image_coords, depth_value = result
+
+            print('Image coords:', image_coords)
+            print('Depth value:', depth_value)
+
+            # Calculate 3D coordinates
+            camera_coords = self.calculate_3d_coordinates(image_coords, depth_value)
+            print('Camera coords:', camera_coords)
+
+            # Broadcast TF frame on the detected color
+            self.broadcast_tf_frame('color_frame', 'depth_camera_link', image_coords, depth_value)
+
+            # Publish color location
+            self.publish_color_location(camera_coords)
+
+    def process_color_blob(self, image_color, image_depth):
+        # Detect a color blob in the color image
+        image_mask = cv2.inRange(image_color, self.lower_color, self.upper_color)
+
+        # Calculate moments of the binary image
+        M = cv2.moments(image_mask)
+
+        if M["m00"] == 0:
+            print('No object detected.')
+            return None
+
+        # Calculate the y, x centroid
+        image_coords = (M["m01"] / M["m00"], M["m10"] / M["m00"])
+        # Get the depth reading at the centroid location
+        depth_value = image_depth[int(image_coords[0]), int(image_coords[1])]  # You might need to do some boundary checking first!
+
+        return image_coords, depth_value
+
+    def calculate_3d_coordinates(self, image_coords, depth_value):
+        # Calculate object's 3D location in camera coords
+        camera_coords = self.camera_model.projectPixelTo3dRay((image_coords[1], image_coords[0]))
+        camera_coords = [x * depth_value for x in camera_coords]
+
+        return camera_coords
+
+    def broadcast_tf_frame(self, frame_id, parent_frame_id, image_coords, depth_value):
+        # Convert coordinates to integers
+        image_coords = (int(image_coords[0]), int(image_coords[1]))
+
+        # Broadcast a static transform from color frame to depth camera frame
+        transform = TransformStamped()
+        transform.header.stamp = self.get_clock().now().to_msg()
+        transform.header.frame_id = parent_frame_id
+        transform.child_frame_id = frame_id
+        transform.transform.translation.x = float(image_coords[1])
+        transform.transform.translation.y = float(image_coords[0])
+        transform.transform.translation.z = float(depth_value)
+        transform.transform.rotation.w = 1.0  # No rotation
+
+        self.tf_broadcaster.sendTransform(transform)
+
+    def publish_color_location(self, camera_coords):
+        if camera_coords:
+            # Convert coordinates to integers
+            camera_coords = (int(camera_coords[0]), int(camera_coords[1]), int(camera_coords[2]))
+
+            # Publish color location
+            color_location = PointStamped()
+            color_location.header.frame_id = "odom"
+            color_location.point.x = float(camera_coords[0])
+            color_location.point.y = float(camera_coords[1])
+            color_location.point.z = float(camera_coords[2])
+            self.color_location_pub.publish(color_location)
+
+    def odom_callback(self, msg):
+        # Store the odometry coordinates
+        self.odom_coords = (msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z)
 
 def main(args=None):
     rclpy.init(args=args)
-    image_converter = ImageConverter()
-    rclpy.spin(image_converter)
-    image_converter.destroy_node()
+    color_mapping_node = ColorMappingNode()
+    rclpy.spin(color_mapping_node)
+    color_mapping_node.destroy_node()
     rclpy.shutdown()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

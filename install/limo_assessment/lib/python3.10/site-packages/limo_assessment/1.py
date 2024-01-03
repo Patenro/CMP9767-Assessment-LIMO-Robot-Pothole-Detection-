@@ -4,16 +4,13 @@ import cv2
 import numpy as np
 from rclpy.node import Node
 from rclpy import qos
-from cv2 import namedWindow, resize
-from cv2 import COLOR_BGR2HSV, inRange
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-
-font = cv2.FONT_HERSHEY_SIMPLEX
+from cv2 import namedWindow, imshow, waitKey, resize
+import os
 
 class ImageConverter(Node):
     def __init__(self):
-        super().__init__("opencv_test")
+        super().__init__("Pothole_Severity_Detector")
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(
             Image,
@@ -33,6 +30,70 @@ class ImageConverter(Node):
         self.unique_colors = {}
         self.logger = self.get_logger()
 
+        # Open log file for writing, overwriting previous content
+        self.log_file_path = "severity_log.txt"
+        self.log_file = open(self.log_file_path, "w")
+        self.log_file.write("Pothole Severity Log\n")
+
+
+    def __del__(self):
+        # Close the log file when the object is destroyed
+        self.log_file.close()
+
+    def get_severity_level(self, severity):
+        if severity < 1500:
+            return "Slightly Severe"
+        elif 1500 <= severity <= 4000:
+            return "Moderately Severe"
+        elif 4001 <= severity <= 6000:
+            return "Highly Severe"
+        else:
+            return "Dangerously Severe"
+
+    def display_severity_level(self, image, area, centroid_x, centroid_y, distance_mm):
+        severity_level = self.get_severity_level(area)
+
+        # Only display text for colors close to the robot
+        min_distance = 300
+        max_distance = 450
+
+        if min_distance <= distance_mm <= max_distance:
+            text = f"Severity: {area:.2f}, Level: {severity_level}"
+
+            font_scale = 0.5
+            font_thickness = 2
+
+            # Choose color based on severity level
+            color = {
+                "Slightly Severe": (0, 255, 0),    # Green
+                "Moderately Severe": (0, 255, 255),  # Yellow
+                "Highly Severe": (0, 0, 255),       # Red
+                "Dangerously Severe": (128, 0, 128)  # Dark Purple
+            }.get(severity_level, (255, 255, 255))  # Default to white for unknown levels
+
+            (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+
+            text_x = int(max(0, centroid_x - text_width / 2))
+            text_y = int(max(text_height, centroid_y - 30))
+
+            cv2.putText(image, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+
+            return color
+        else:
+            return None
+
+    def colorize_mask(self, mask, severity_level):
+        # Choose color for the mask based on severity level
+        color = {
+            "Slightly Severe": (0, 255, 0),    # Green
+            "Moderately Severe": (0, 255, 255),  # Yellow
+            "Highly Severe": (0, 0, 255),       # Red
+            "Dangerously Severe": (128, 0, 128)  # Dark Purple
+        }.get(severity_level, (255, 255, 255))  # Default to white for unknown levels
+
+        color_mask = cv2.bitwise_and(np.ones_like(self.cv_image) * color, self.cv_image, mask=mask)
+        return color_mask
+
     def search_contours(self, mask):
         contours_area = []
         severities = []
@@ -40,12 +101,15 @@ class ImageConverter(Node):
         colormap = cv2.applyColorMap(np.arange(256, dtype=np.uint8).reshape(1, -1), cv2.COLORMAP_JET)
         colormap = colormap.squeeze()
 
-        contours, hierarchy = cv2.findContours(
+        contours, _ = cv2.findContours(
             mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
         closest_contour = None
         closest_distance = float("inf")
+
+        font_color = (0, 0, 0)  # Default color if no contour is found
+        distance_mm = 0  # Initialize distance_mm here
 
         for contour in contours:
             cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
@@ -90,15 +154,8 @@ class ImageConverter(Node):
 
                 color = tuple(map(int, colormap[normalized_severity]))
 
-                cv2.putText(
-                    self.cv_image,
-                    f"Severity: {area:.2f}",
-                    (cX + 10, cY + 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    color,
-                    2,
-                )
+                # Display severity level without overlapping
+                font_color = self.display_severity_level(self.cv_image, area, cX, cY + 30, distance_mm)
 
                 if area > 100:
                     x, y, w, h = cv2.boundingRect(contour)
@@ -108,11 +165,15 @@ class ImageConverter(Node):
                     if pixel_color not in self.unique_colors:
                         self.unique_colors[pixel_color] = 1
 
-        return contours, contours_area, severities, closest_contour
+                    # Append severity level to the log file
+                    severity_level = self.get_severity_level(area)
+                    self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
+                    self.log_file.flush()
+
+        return contours, contours_area, severities, closest_contour, font_color, distance_mm
 
     def image_callback(self, data):
-        namedWindow("Image window")
-        #namedWindow("Masked")
+        namedWindow("Image window showing the distance to each pothole and their severity")
 
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
@@ -124,15 +185,23 @@ class ImageConverter(Node):
 
         mask = cv2.inRange(hsv, lower_pink, upper_pink)
 
-        contours, contours_area, severities, closest_contour = self.search_contours(mask)
+        contours, contours_area, severities, closest_contour, font_color, distance_mm = self.search_contours(mask)
 
-        cv2.imshow("Image window", self.cv_image)
-        #cv2.imshow("Masked", mask)
+        cv2.imshow("Image window showing the distance to each pothole and their severity", self.cv_image)
+        cv2.imshow("Masked", mask)
+
+        # Display the severity level in the mask image
+        if closest_contour is not None:
+            mask_image = self.colorize_mask(mask, self.get_severity_level(contours_area[0]))
+            cv2.imshow("Severity Mask", mask_image)
+
         cv2.waitKey(1)
 
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
-            self.logger.info(f"Severity of closest color: {severity}")
+            self.logger.info(f"Severity of closest color: {severity}, Level: {self.get_severity_level(severity)}")
+            self.log_file.write(f"Pothole Severity: {severity}, Level: {self.get_severity_level(severity)}\n")
+            self.log_file.flush()
 
     def depth_callback(self, data):
         self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
