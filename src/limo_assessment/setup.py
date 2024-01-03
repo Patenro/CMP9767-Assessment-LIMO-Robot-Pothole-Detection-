@@ -20,11 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "test_node = limo_assessment.my_first_node:main", 
-            "pothole_detector = limo_assessment.pothole_detector:main",
-            "draw_circle = limo_assessment.draw_circle:main",
-            "navigation = limo_assessment.navigation:main",
-            "HSV_pothole_detector = limo_assessment.pothole_detectorHSV:main",
+            "pothole_counter = limo_assessment.pothole_counter:main",
+            "autonomous_navigation = limo_assessment.autonomous_navigation:main"
         ],
     },
 )

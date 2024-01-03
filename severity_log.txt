@@ -1,0 +1,3 @@
+Pothole Severity Log
+Pothole Severity: 7405.0, Level: Dangerously Severe
+Pothole Severity: 3889.5, Level: Moderately Severe

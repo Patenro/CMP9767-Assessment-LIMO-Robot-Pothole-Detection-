@@ -4,12 +4,15 @@ import cv2
 import numpy as np
 from rclpy.node import Node
 from rclpy import qos
-from cv2 import namedWindow, resize
-from cv2 import COLOR_BGR2HSV, inRange
+from cv2 import namedWindow, cvtColor, imshow, inRange
+from cv2 import destroyAllWindows, startWindowThread
+from cv2 import COLOR_BGR2HSV, blur, Canny, resize, INTER_CUBIC
+from numpy import mean
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 font = cv2.FONT_HERSHEY_SIMPLEX
+
 
 class ImageConverter(Node):
     def __init__(self):
@@ -20,35 +23,29 @@ class ImageConverter(Node):
             "/limo/depth_camera_link/image_raw",
             self.image_callback,
             qos_profile=qos.qos_profile_sensor_data,
-        )
+        )  # Set QoS Profile
 
         self.depth_sub = self.create_subscription(
             Image,
             "/limo/depth_camera_link/depth/image_raw",
             self.depth_callback,
             qos_profile=qos.qos_profile_sensor_data,
-        )
+        )  # Set QoS Profile
 
         self.depth_image = None
         self.unique_colors = {}
-        self.logger = self.get_logger()
 
     def search_contours(self, mask):
+        contours_count = 0
         contours_area = []
-        severities = []
-
-        colormap = cv2.applyColorMap(np.arange(256, dtype=np.uint8).reshape(1, -1), cv2.COLORMAP_JET)
-        colormap = colormap.squeeze()
 
         contours, hierarchy = cv2.findContours(
             mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        closest_contour = None
-        closest_distance = float("inf")
-
         for contour in contours:
             cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
+            contours_count += 1
 
             area = cv2.contourArea(contour)
             contours_area.append(area)
@@ -59,63 +56,55 @@ class ImageConverter(Node):
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
+            cv2.putText(
+                self.cv_image,
+                f"{contours_count}",
+                (cX - 25, cY - 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                2,
+            )
 
+            # Add point at the center of the contour
             cv2.circle(self.cv_image, (cX, cY), 5, (0, 0, 255), -1)
 
             if self.depth_image is not None:
                 depth_at_center = self.depth_image[cY, cX]
-                distance_mm = depth_at_center * 1000
-
+                distance_mm = depth_at_center * 1000  # Convert to millimeters
                 cv2.putText(
                     self.cv_image,
                     f"{distance_mm:.2f}mm",
-                    (cX + 10, cY + 50),
+                    (cX + 10, cY + 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (255, 255, 255),
                     2,
                 )
 
-                min_distance = 300
-                max_distance = 450
+            # Count and track unique colors
+            if area > 100:  # Adjust the area threshold as needed
+                x, y, w, h = cv2.boundingRect(contour)
+                centroid_x = x + (w // 2)
+                centroid_y = y + (h // 2)
+                pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
+                if pixel_color not in self.unique_colors:
+                    self.unique_colors[pixel_color] = 1
 
-                if min_distance <= distance_mm <= max_distance and distance_mm < closest_distance:
-                    closest_distance = distance_mm
-                    closest_contour = contour
+        unique_colors_count = len(self.unique_colors)
+        print("Number of unique colors:", unique_colors_count)
 
-                severities.append(area)
-
-                max_severity = max(severities)
-                normalized_severity = int(area * 255 / max_severity) if max_severity != 0 else 0
-
-                color = tuple(map(int, colormap[normalized_severity]))
-
-                cv2.putText(
-                    self.cv_image,
-                    f"Severity: {area:.2f}",
-                    (cX + 10, cY + 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    color,
-                    2,
-                )
-
-                if area > 100:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    centroid_x = x + (w // 2)
-                    centroid_y = y + (h // 2)
-                    pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
-                    if pixel_color not in self.unique_colors:
-                        self.unique_colors[pixel_color] = 1
-
-        return contours, contours_area, severities, closest_contour
+        return contours_count, contours_area
 
     def image_callback(self, data):
         namedWindow("Image window")
-        #namedWindow("Masked")
+        namedWindow("Masked")
+        #namedWindow("Distance")
 
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
+        self.cv_image = resize(
+            self.cv_image, None, fx=1, fy=1, interpolation=INTER_CUBIC
+        )
 
         hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
 
@@ -124,18 +113,18 @@ class ImageConverter(Node):
 
         mask = cv2.inRange(hsv, lower_pink, upper_pink)
 
-        contours, contours_area, severities, closest_contour = self.search_contours(mask)
+        count, areas = self.search_contours(mask)
 
         cv2.imshow("Image window", self.cv_image)
-        #cv2.imshow("Masked", mask)
+        cv2.imshow("Masked", mask)
         cv2.waitKey(1)
 
-        if closest_contour is not None:
-            severity = cv2.contourArea(closest_contour)
-            self.logger.info(f"Severity of closest color: {severity}")
+        print("Number of contours:", count)
+        print("Areas of contours:", areas)
 
     def depth_callback(self, data):
-        self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
+        self.depth_image = self.bridge.imgmsg_to_cv2(data)
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -143,6 +132,7 @@ def main(args=None):
     rclpy.spin(image_converter)
     image_converter.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import rclpy
 import cv2
 import numpy as np
@@ -7,13 +8,15 @@ from rclpy import qos
 from cv2 import namedWindow, resize
 from cv2 import COLOR_BGR2HSV, inRange
 from sensor_msgs.msg import Image
+from nav_msgs.msg import OccupancyGrid
 from cv_bridge import CvBridge
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
-class ImageConverter(Node):
+
+class ColorMappingNode(Node):
     def __init__(self):
-        super().__init__("opencv_test")
+        super().__init__('color_mapping_node')
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(
             Image,
@@ -33,23 +36,14 @@ class ImageConverter(Node):
         self.unique_colors = {}
         self.logger = self.get_logger()
 
-        # Open log file for writing, overwriting previous content
-        self.log_file_path = "severity_log.txt"
-        self.log_file = open(self.log_file_path, "w")
+        self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
+        self.color_counts = {'red': 0, 'green': 0, 'blue': 0, 'custom_color': 0}
 
-    def __del__(self):
-        # Close the log file when the object is destroyed
-        self.log_file.close()
-
-    def get_severity_level(self, severity):
-        if severity < 1500:
-            return "Slightly Severe"
-        elif 1500 <= severity <= 4000:
-            return "Moderately Severe"
-        elif 4001 <= severity <= 6000:
-            return "Highly Severe"
-        else:
-            return "Dangerously Severe"
+        self.map_publisher = self.create_publisher(
+            OccupancyGrid,
+            "/map_new",
+            10
+        )
 
     def search_contours(self, mask):
         contours_area = []
@@ -126,10 +120,10 @@ class ImageConverter(Node):
                     if pixel_color not in self.unique_colors:
                         self.unique_colors[pixel_color] = 1
 
-                    # Append severity level to the log file
-                    severity_level = self.get_severity_level(area)
-                    self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
-                    self.log_file.flush()
+                    # Update color counts using contour areas
+                    for color, rgb in self.colors.items():
+                        if np.array_equal(pixel_color, rgb):
+                            self.color_counts[color] += 1
 
         return contours, contours_area, severities, closest_contour
 
@@ -160,12 +154,14 @@ class ImageConverter(Node):
     def depth_callback(self, data):
         self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
 
+
 def main(args=None):
     rclpy.init(args=args)
-    image_converter = ImageConverter()
-    rclpy.spin(image_converter)
-    image_converter.destroy_node()
+    color_mapping_node = ColorMappingNode()
+    rclpy.spin(color_mapping_node)
+    color_mapping_node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()
