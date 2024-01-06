@@ -1,217 +1,211 @@
 #!/usr/bin/env python3
-import rclpy
 import cv2
 import numpy as np
+import rclpy
 from rclpy.node import Node
-from rclpy import qos
-from sensor_msgs.msg import Image
-from cv2 import namedWindow, imshow, waitKey, resize
-import os
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PointStamped, TransformStamped
+from nav_msgs.msg import Odometry
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_ros import StaticTransformBroadcaster, Buffer
+from tf2_geometry_msgs import do_transform_pose
+import image_geometry
+import matplotlib.pyplot as plt
 
-class ImageConverter(Node):
+class ColorMappingNode(Node):
     def __init__(self):
-        super().__init__("Pothole_Severity_Detector")
+        super().__init__('color_mapping_node')
+
         self.bridge = CvBridge()
-        self.image_sub = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/image_raw",
-            self.image_callback,
-            qos_profile=qos.qos_profile_sensor_data,
+        self.camera_model = None
+        self.image_depth_ros = None
+        self.color_counter = 1
+        self.odom_coords = None
+        self.color_coordinates = []
+
+        # Color range for detection
+        self.lower_color = np.array([150, 50, 50], dtype=np.uint8)
+        self.upper_color = np.array([170, 255, 255], dtype=np.uint8)
+
+        # Subscribe to camera info, color image, and depth image topics
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            '/limo/depth_camera_link/camera_info',
+            self.camera_info_callback,
+            10
         )
 
-        self.depth_sub = self.create_subscription(
+        self.image_color_sub = self.create_subscription(
             Image,
-            "/limo/depth_camera_link/depth/image_raw",
-            self.depth_callback,
-            qos_profile=qos.qos_profile_sensor_data,
+            '/limo/depth_camera_link/image_raw',
+            self.image_color_callback,
+            10
         )
 
-        self.depth_image = None
-        self.unique_colors = {}
-        self.logger = self.get_logger()
+        self.image_depth_sub = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/depth/image_raw',
+            self.image_depth_callback,
+            10
+        )
 
-        # Open log file for writing, overwriting previous content
-        self.log_file_path = "severity_log.txt"
-        self.log_file = open(self.log_file_path, "w")
-        self.log_file.write("Pothole Severity Log\n")
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )
 
+        # Publisher for color locations
+        self.color_location_pub = self.create_publisher(
+            PointStamped,
+            '/limo/color_location',
+            10
+        )
 
-    def __del__(self):
-        # Close the log file when the object is destroyed
-        self.log_file.close()
+        # TF Broadcaster for static transforms
+        self.tf_broadcaster = StaticTransformBroadcaster(self)
+        self.tf_buffer = Buffer()
 
-    def get_severity_level(self, severity):
-        if severity < 1500:
-            return "Slightly Severe"
-        elif 1500 <= severity <= 4000:
-            return "Moderately Severe"
-        elif 4001 <= severity <= 6000:
-            return "Highly Severe"
-        else:
-            return "Dangerously Severe"
+    def camera_info_callback(self, data):
+        if not self.camera_model:
+            self.camera_model = image_geometry.PinholeCameraModel()
+        self.camera_model.fromCameraInfo(data)
 
-    def display_severity_level(self, image, area, centroid_x, centroid_y, distance_mm):
-        severity_level = self.get_severity_level(area)
+    def image_depth_callback(self, data):
+        self.image_depth_ros = data
 
-        # Only display text for colors close to the robot
-        min_distance = 300
-        max_distance = 450
+    def image_color_callback(self, data):
+        # Wait for camera_model and depth image to arrive
+        if self.camera_model is None or self.image_depth_ros is None:
+            return
 
-        if min_distance <= distance_mm <= max_distance:
-            text = f"Severity: {area:.2f}, Level: {severity_level}"
+        try:
+            image_color = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            image_depth = self.bridge.imgmsg_to_cv2(self.image_depth_ros, "32FC1")
+        except CvBridgeError as e:
+            print("Error converting images:", str(e))
+            return
 
-            font_scale = 0.5
-            font_thickness = 2
+        # Process color blob
+        result = self.process_color_blob(image_color, image_depth)
+        if result:
+            image_coords, depth_value = result
 
-            # Choose color based on severity level
-            color = {
-                "Slightly Severe": (0, 255, 0),    # Green
-                "Moderately Severe": (0, 255, 255),  # Yellow
-                "Highly Severe": (0, 0, 255),       # Red
-                "Dangerously Severe": (128, 0, 128)  # Dark Purple
-            }.get(severity_level, (255, 255, 255))  # Default to white for unknown levels
+            # Calculate 3D coordinates
+            camera_coords = self.calculate_3d_coordinates(image_coords, depth_value)
 
-            (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness)
+            # Broadcast TF frame on the detected color
+            self.broadcast_tf_frame(f'color_frame_{self.color_counter}', 'depth_camera_link', image_coords, depth_value)
 
-            text_x = int(max(0, centroid_x - text_width / 2))
-            text_y = int(max(text_height, centroid_y - 30))
+            # Publish color location
+            self.publish_color_location(camera_coords)
 
-            cv2.putText(image, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+    def process_color_blob(self, image_color, image_depth):
+        # Detect a color blob in the color image
+        image_mask = cv2.inRange(image_color, self.lower_color, self.upper_color)
 
-            return color
-        else:
+        # Calculate moments of the binary image
+        M = cv2.moments(image_mask)
+
+        if M["m00"] == 0:
+            print('No object detected.')
             return None
 
-    def colorize_mask(self, mask, severity_level):
-        # Choose color for the mask based on severity level
-        color = {
-            "Slightly Severe": (0, 255, 0),    # Green
-            "Moderately Severe": (0, 255, 255),  # Yellow
-            "Highly Severe": (0, 0, 255),       # Red
-            "Dangerously Severe": (128, 0, 128)  # Dark Purple
-        }.get(severity_level, (255, 255, 255))  # Default to white for unknown levels
+        # Calculate the y, x centroid
+        image_coords = (M["m01"] / M["m00"], M["m10"] / M["m00"])
+        # Get the depth reading at the centroid location
+        depth_value = image_depth[int(image_coords[0]), int(image_coords[1])]  # You might need to do some boundary checking first!
 
-        color_mask = cv2.bitwise_and(np.ones_like(self.cv_image) * color, self.cv_image, mask=mask)
-        return color_mask
+        return image_coords, depth_value
 
-    def search_contours(self, mask):
-        contours_area = []
-        severities = []
+    def calculate_3d_coordinates(self, image_coords, depth_value):
+        # Calculate object's 3D location in camera coords
+        camera_coords = self.camera_model.projectPixelTo3dRay((image_coords[1], image_coords[0]))
+        camera_coords = [x * depth_value for x in camera_coords]
 
-        colormap = cv2.applyColorMap(np.arange(256, dtype=np.uint8).reshape(1, -1), cv2.COLORMAP_JET)
-        colormap = colormap.squeeze()
+        return camera_coords
 
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+    def broadcast_tf_frame(self, frame_id, parent_frame_id, image_coords, depth_value):
+        # Convert coordinates to integers
+        image_coords = (int(image_coords[0]), int(image_coords[1]))
 
-        closest_contour = None
-        closest_distance = float("inf")
+        # Broadcast a static transform from color frame to depth camera frame
+        transform = TransformStamped()
+        transform.header.stamp = self.get_clock().now().to_msg()
+        transform.header.frame_id = parent_frame_id
+        transform.child_frame_id = frame_id
+        transform.transform.translation.x = float(image_coords[1])
+        transform.transform.translation.y = float(image_coords[0])
+        transform.transform.translation.z = float(depth_value)
+        transform.transform.rotation.w = 1.0  # No rotation
 
-        font_color = (0, 0, 0)  # Default color if no contour is found
-        distance_mm = 0  # Initialize distance_mm here
+        self.tf_broadcaster.sendTransform(transform)
 
-        for contour in contours:
-            cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
+    def publish_color_location(self, camera_coords):
+        if camera_coords and self.odom_coords:
+            # Calculate color location with respect to the /odom frame
+            odom_relative_coords = (
+                camera_coords[0] + self.odom_coords[0],
+                camera_coords[1] + self.odom_coords[1],
+                camera_coords[2] + self.odom_coords[2]
+            )
 
-            area = cv2.contourArea(contour)
-            contours_area.append(area)
+            # Convert coordinates to integers
+            odom_relative_coords = (
+                int(odom_relative_coords[0]),
+                int(odom_relative_coords[1]),
+                int(odom_relative_coords[2])
+            )
 
-            M = cv2.moments(contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-            else:
-                cX, cY = 0, 0
+            # Store color coordinates
+            self.color_coordinates.append(odom_relative_coords)
 
-            cv2.circle(self.cv_image, (cX, cY), 5, (0, 0, 255), -1)
+            # Publish color location with a unique identifier
+            color_location = PointStamped()
+            color_location.header.frame_id = "odom"
+            color_location.point.x = float(odom_relative_coords[0])
+            color_location.point.y = float(odom_relative_coords[1])
+            color_location.point.z = float(odom_relative_coords[2])
 
-            if self.depth_image is not None:
-                depth_at_center = self.depth_image[cY, cX]
-                distance_mm = depth_at_center * 1000
+            # Print the result
+            self.get_logger().info(f'Color{self.color_counter}: x={odom_relative_coords[0]}, y={odom_relative_coords[1]}, z={odom_relative_coords[2]} with reference to the odom')
 
-                cv2.putText(
-                    self.cv_image,
-                    f"{distance_mm:.2f}mm",
-                    (cX + 10, cY + 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 255),
-                    2,
-                )
+            self.color_location_pub.publish(color_location)
 
-                min_distance = 300
-                max_distance = 450
+            # Increment color identifier counter
+            self.color_counter += 1
 
-                if min_distance <= distance_mm <= max_distance and distance_mm < closest_distance:
-                    closest_distance = distance_mm
-                    closest_contour = contour
+    def odom_callback(self, msg):
+        # Store the odometry coordinates
+        self.odom_coords = (msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z)
 
-                severities.append(area)
+    def plot_color_coordinates(self):
+        if self.odom_coords is None or not self.color_coordinates:
+            return
 
-                max_severity = max(severities)
-                normalized_severity = int(area * 255 / max_severity) if max_severity != 0 else 0
+        # Extract x, y coordinates
+        x_coords = [coord[0] for coord in self.color_coordinates]
+        y_coords = [coord[1] for coord in self.color_coordinates]
 
-                color = tuple(map(int, colormap[normalized_severity]))
-
-                # Display severity level without overlapping
-                font_color = self.display_severity_level(self.cv_image, area, cX, cY + 30, distance_mm)
-
-                if area > 100:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    centroid_x = x + (w // 2)
-                    centroid_y = y + (h // 2)
-                    pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
-                    if pixel_color not in self.unique_colors:
-                        self.unique_colors[pixel_color] = 1
-
-                    # Append severity level to the log file
-                    severity_level = self.get_severity_level(area)
-                    self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
-                    self.log_file.flush()
-
-        return contours, contours_area, severities, closest_contour, font_color, distance_mm
-
-    def image_callback(self, data):
-        namedWindow("Image window showing the distance to each pothole and their severity")
-
-        self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
-
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
-
-        lower_pink = np.array([150, 50, 50])
-        upper_pink = np.array([170, 255, 255])
-
-        mask = cv2.inRange(hsv, lower_pink, upper_pink)
-
-        contours, contours_area, severities, closest_contour, font_color, distance_mm = self.search_contours(mask)
-
-        cv2.imshow("Image window showing the distance to each pothole and their severity", self.cv_image)
-        cv2.imshow("Masked", mask)
-
-        # Display the severity level in the mask image
-        if closest_contour is not None:
-            mask_image = self.colorize_mask(mask, self.get_severity_level(contours_area[0]))
-            cv2.imshow("Severity Mask", mask_image)
-
-        cv2.waitKey(1)
-
-        if closest_contour is not None:
-            severity = cv2.contourArea(closest_contour)
-            self.logger.info(f"Severity of closest color: {severity}, Level: {self.get_severity_level(severity)}")
-            self.log_file.write(f"Pothole Severity: {severity}, Level: {self.get_severity_level(severity)}\n")
-            self.log_file.flush()
-
-    def depth_callback(self, data):
-        self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
+        # Plot color coordinates
+        plt.figure()
+        plt.scatter(x_coords, y_coords, label='Detected Colors', color='r')
+        plt.scatter(self.odom_coords[0], self.odom_coords[1], label='Odom', color='b')
+        plt.xlabel('X-axis (meters)')
+        plt.ylabel('Y-axis (meters)')
+        plt.title('Detected Colors and Odom')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 def main(args=None):
     rclpy.init(args=args)
-    image_converter = ImageConverter()
-    rclpy.spin(image_converter)
-    image_converter.destroy_node()
+    color_mapping_node = ColorMappingNode()
+    rclpy.spin(color_mapping_node)
+    color_mapping_node.plot_color_coordinates()  # Plot color coordinates after spinning
+    color_mapping_node.destroy_node()
     rclpy.shutdown()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

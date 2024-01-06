@@ -3,126 +3,168 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
-from nav_msgs.msg import OccupancyGrid
-from cv_bridge import CvBridge
-
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PointStamped, TransformStamped
+from nav_msgs.msg import Odometry
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_ros import StaticTransformBroadcaster, Buffer
+from tf2_geometry_msgs import do_transform_pose
+import image_geometry
 
 class ColorMappingNode(Node):
     def __init__(self):
         super().__init__('color_mapping_node')
 
-        # Initialize the centroid tracker and other variables
-        self.ct = cv2.TrackerCSRT_create()
-        self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
-        self.color_counts = {'red': 0, 'green': 0, 'blue': 0, 'custom_color': 0}
-
-        # Subscribe to the camera image topic
-        self.image_subscription = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/image_raw",
-            self.image_callback,
-            10
-        )
-        self.image_subscription  # Prevent unused variable warning
-
-        # Publisher for the occupancy grid map
-        self.map_publisher = self.create_publisher(
-            OccupancyGrid,
-            "/map_new",
-            10
-        )
-
         self.bridge = CvBridge()
+        self.camera_model = None
+        self.image_depth_ros = None
 
-    def image_callback(self, msg):
-        # Convert the ROS Image message to a BGR image
-        frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        # Color range for detection
+        self.lower_color = np.array([150, 50, 50], dtype=np.uint8)
+        self.upper_color = np.array([170, 255, 255], dtype=np.uint8)
 
-        # Convert the frame to HSV color space
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        # Subscribe to camera info, color image, and depth image topics
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            '/limo/depth_camera_link/camera_info',
+            self.camera_info_callback,
+            10
+        )
 
-        # Initialize the sum total
-        sum_total = 0
+        self.image_color_sub = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/image_raw',
+            self.image_color_callback,
+            10
+        )
 
-        # Detect colors in the frame
-        for color, rgb in self.colors.items():
-            lower = np.array([150, 50, 50], dtype=np.uint8)
-            upper = np.array([170, 255, 255], dtype=np.uint8)
-            
-            mask = cv2.inRange(hsv, lower, upper)
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        self.image_depth_sub = self.create_subscription(
+            Image,
+            '/limo/depth_camera_link/depth/image_raw',
+            self.image_depth_callback,
+            10
+        )
 
-            # Update color counts using contour areas
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area > 100:  # Adjust the area threshold as needed
-                    self.color_counts[color] += 1
-                    sum_total += 1
-                    x, y, w, h = cv2.boundingRect(contour)
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), rgb, 2)
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )
 
-        # Publish the occupancy grid map
-        occupancy_grid = self.create_occupancy_grid(frame)
-        self.map_publisher.publish(occupancy_grid)
+        # Publisher for color locations
+        self.color_location_pub = self.create_publisher(
+            PointStamped,
+            '/limo/color_location',
+            10
+        )
 
-        # Display the frame
-        cv2.imshow("Frame", frame)
-        cv2.waitKey(1)
+        # TF Broadcaster for static transforms
+        self.tf_broadcaster = StaticTransformBroadcaster(self)
+        self.tf_buffer = Buffer()
 
-        # Print the sum total
-        print("Sum Total:", sum_total)
+        self.odom_coords = None
 
-    def create_occupancy_grid(self, frame):
-        # Get the dimensions of the frame
-        height, width, _ = frame.shape
+    def camera_info_callback(self, data):
+        if not self.camera_model:
+            self.camera_model = image_geometry.PinholeCameraModel()
+        self.camera_model.fromCameraInfo(data)
 
-        # Create an empty occupancy grid map
-        occupancy_map = np.zeros((height, width), dtype=np.int8)
+    def image_depth_callback(self, data):
+        self.image_depth_ros = data
 
-        # Iterate over each pixel in the frame
-        for y in range(height):
-            for x in range(width):
-                pixel = frame[y, x]
-                for color, rgb in self.colors.items():
-                    if np.array_equal(pixel, rgb):
-                        occupancy_map[y, x] = 100  # Set cell as occupied
-                        break
-                else:
-                    occupancy_map[y, x] = -1  # Set cell as unknown
+    def image_color_callback(self, data):
+        # Wait for camera_model and depth image to arrive
+        if self.camera_model is None or self.image_depth_ros is None:
+            return
 
-        # Create an OccupancyGrid message
-        occupancy_grid = OccupancyGrid()
-        occupancy_grid.header.stamp = self.get_clock().now().to_msg()
-        occupancy_grid.header.frame_id = "map"
-        occupancy_grid.info.resolution = 0.05  # Adjust as needed
-        occupancy_grid.info.width = width
-        occupancy_grid.info.height = height
-        occupancy_grid.info.origin.position.x = 0.0
-        occupancy_grid.info.origin.position.y = 0.0
-        occupancy_grid.info.origin.position.z = 0.0
-        occupancy_grid.info.origin.orientation.x = 0.0
-        occupancy_grid.info.origin.orientation.y = 0.0
-        occupancy_grid.info.origin.orientation.z = 0.0
-        occupancy_grid.info.origin.orientation.w = 1.0
+        try:
+            image_color = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            image_depth = self.bridge.imgmsg_to_cv2(self.image_depth_ros, "32FC1")
+        except CvBridgeError as e:
+            print("Error converting images:", str(e))
+            return
 
-        # Convert the occupancy map to a 1D array
-        occupancy_data = occupancy_map.flatten().tolist()
-        occupancy_grid.data = occupancy_data
+        # Process color blob
+        result = self.process_color_blob(image_color, image_depth)
+        if result:
+            image_coords, depth_value = result
 
-        return occupancy_grid
+            print('Image coords:', image_coords)
+            print('Depth value:', depth_value)
 
-    def run(self):
-        rclpy.spin(self)
+            # Calculate 3D coordinates
+            camera_coords = self.calculate_3d_coordinates(image_coords, depth_value)
+            print('Camera coords:', camera_coords)
 
-        # Print the color counts
-        for color, count in self.color_counts.items():
-            print(f"{color}: {count}")
+            # Broadcast TF frame on the detected color
+            self.broadcast_tf_frame('color_frame', 'depth_camera_link', image_coords, depth_value)
+
+            # Publish color location
+            self.publish_color_location(camera_coords)
+
+    def process_color_blob(self, image_color, image_depth):
+        # Detect a color blob in the color image
+        image_mask = cv2.inRange(image_color, self.lower_color, self.upper_color)
+
+        # Calculate moments of the binary image
+        M = cv2.moments(image_mask)
+
+        if M["m00"] == 0:
+            print('No object detected.')
+            return None
+
+        # Calculate the y, x centroid
+        image_coords = (M["m01"] / M["m00"], M["m10"] / M["m00"])
+        # Get the depth reading at the centroid location
+        depth_value = image_depth[int(image_coords[0]), int(image_coords[1])]  # You might need to do some boundary checking first!
+
+        return image_coords, depth_value
+
+    def calculate_3d_coordinates(self, image_coords, depth_value):
+        # Calculate object's 3D location in camera coords
+        camera_coords = self.camera_model.projectPixelTo3dRay((image_coords[1], image_coords[0]))
+        camera_coords = [x * depth_value for x in camera_coords]
+
+        return camera_coords
+
+    def broadcast_tf_frame(self, frame_id, parent_frame_id, image_coords, depth_value):
+        # Convert coordinates to integers
+        image_coords = (int(image_coords[0]), int(image_coords[1]))
+
+        # Broadcast a static transform from color frame to depth camera frame
+        transform = TransformStamped()
+        transform.header.stamp = self.get_clock().now().to_msg()
+        transform.header.frame_id = parent_frame_id
+        transform.child_frame_id = frame_id
+        transform.transform.translation.x = float(image_coords[1])
+        transform.transform.translation.y = float(image_coords[0])
+        transform.transform.translation.z = float(depth_value)
+        transform.transform.rotation.w = 1.0  # No rotation
+
+        self.tf_broadcaster.sendTransform(transform)
+
+    def publish_color_location(self, camera_coords):
+        if camera_coords:
+            # Convert coordinates to integers
+            camera_coords = (int(camera_coords[0]), int(camera_coords[1]), int(camera_coords[2]))
+
+            # Publish color location
+            color_location = PointStamped()
+            color_location.header.frame_id = "odom"
+            color_location.point.x = float(camera_coords[0])
+            color_location.point.y = float(camera_coords[1])
+            color_location.point.z = float(camera_coords[2])
+            self.color_location_pub.publish(color_location)
+
+    def odom_callback(self, msg):
+        # Store the odometry coordinates
+        self.odom_coords = (msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z)
 
 def main(args=None):
     rclpy.init(args=args)
     color_mapping_node = ColorMappingNode()
-    color_mapping_node.run()
+    rclpy.spin(color_mapping_node)
     color_mapping_node.destroy_node()
     rclpy.shutdown()
 

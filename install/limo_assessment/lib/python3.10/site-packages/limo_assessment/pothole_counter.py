@@ -7,7 +7,6 @@ from sensor_msgs.msg import Image
 from nav_msgs.msg import OccupancyGrid
 from cv_bridge import CvBridge
 
-
 class ColorMappingNode(Node):
     def __init__(self):
         super().__init__('color_mapping_node')
@@ -16,6 +15,7 @@ class ColorMappingNode(Node):
         self.ct = cv2.TrackerCSRT_create()
         self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
         self.color_counts = {'red': 0, 'green': 0, 'blue': 0, 'custom_color': 0}
+        self.max_sum_total = 0  # Initialize max_sum_total
 
         # Subscribe to the camera image topic
         self.image_subscription = self.create_subscription(
@@ -32,8 +32,13 @@ class ColorMappingNode(Node):
             "/map_new",
             10
         )
+        self.get_logger().info('The robot is counting the potholes')
 
         self.bridge = CvBridge()
+
+    def print_max_sum_total(self, current_sum_total):
+        self.max_sum_total = max(current_sum_total, self.max_sum_total)
+        print(f"Total Pothole Count: {self.max_sum_total}")
 
     def image_callback(self, msg):
         # Convert the ROS Image message to a BGR image
@@ -66,12 +71,11 @@ class ColorMappingNode(Node):
         occupancy_grid = self.create_occupancy_grid(frame)
         self.map_publisher.publish(occupancy_grid)
 
-        # Display the frame
-        cv2.imshow("Frame", frame)
-        cv2.waitKey(1)
-
         # Print the sum total
-        print("Sum Total:", sum_total)
+        print("Counting:", sum_total)
+
+        # Print the max sum total
+        self.print_max_sum_total(sum_total)
 
     def create_occupancy_grid(self, frame):
         # Get the dimensions of the frame

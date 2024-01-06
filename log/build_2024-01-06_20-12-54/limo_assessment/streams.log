@@ -1,0 +1,58 @@
+[1.421s] Invoking command in '/home/adeola/CMP9767-Assessment/src/limo_assessment': PYTHONPATH=/home/adeola/CMP9767-Assessment/build/limo_assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/limo_assessment build --build-base /home/adeola/CMP9767-Assessment/build/limo_assessment/build install --record /home/adeola/CMP9767-Assessment/build/limo_assessment/install.log --single-version-externally-managed
+[1.598s] running egg_info
+[1.611s] writing ../../build/limo_assessment/limo_assessment.egg-info/PKG-INFO
+[1.611s] writing dependency_links to ../../build/limo_assessment/limo_assessment.egg-info/dependency_links.txt
+[1.612s] writing entry points to ../../build/limo_assessment/limo_assessment.egg-info/entry_points.txt
+[1.612s] writing requirements to ../../build/limo_assessment/limo_assessment.egg-info/requires.txt
+[1.612s] writing top-level names to ../../build/limo_assessment/limo_assessment.egg-info/top_level.txt
+[1.640s] reading manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'
+[1.656s] writing manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'
+[1.656s] running build
+[1.656s] running build_py
+[1.656s] copying limo_assessment/__init__.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.656s] copying limo_assessment/1.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.656s] copying limo_assessment/autonomous_navigation.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.656s] copying limo_assessment/Report2.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.656s] copying limo_assessment/Color processing.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.656s] copying limo_assessment/Report.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.657s] copying limo_assessment/pothole_counter.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.657s] copying limo_assessment/Test10.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.657s] copying limo_assessment/Color detection and distance.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment
+[1.657s] running install
+[1.670s] /home/adeola/.local/lib/python3.10/site-packages/setuptools/_distutils/cmd.py:66: SetuptoolsDeprecationWarning: setup.py install is deprecated.
+[1.670s] !!
+[1.670s] 
+[1.670s]         ********************************************************************************
+[1.670s]         Please avoid running ``setup.py`` directly.
+[1.670s]         Instead, use pypa/build, pypa/installer or other
+[1.670s]         standards-based tools.
+[1.670s] 
+[1.671s]         See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.
+[1.671s]         ********************************************************************************
+[1.671s] 
+[1.671s] !!
+[1.671s]   self.initialize_options()
+[1.674s] running install_lib
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/1.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/autonomous_navigation.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/Color processing.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/Report.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/pothole_counter.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.688s] copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/Color detection and distance.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment
+[1.689s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/1.py to 1.cpython-310.pyc
+[1.690s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/autonomous_navigation.py to autonomous_navigation.cpython-310.pyc
+[1.690s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/Color processing.py to Color processing.cpython-310.pyc
+[1.691s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/Report.py to Report.cpython-310.pyc
+[1.692s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/pothole_counter.py to pothole_counter.cpython-310.pyc
+[1.693s] byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/Color detection and distance.py to Color detection and distance.cpython-310.pyc
+[1.694s] running install_data
+[1.707s] copying resource/limo_assessment -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index/resource_index/packages
+[1.707s] copying package.xml -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/limo_assessment
+[1.707s] running install_egg_info
+[1.721s] removing '/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment-0.0.0-py3.10.egg-info' (and everything under it)
+[1.722s] Copying ../../build/limo_assessment/limo_assessment.egg-info to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment-0.0.0-py3.10.egg-info
+[2.016s] running install_scripts
+[2.140s] Installing autonomous_navigation script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment
+[2.140s] Installing pothole_counter script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment
+[2.141s] writing list of installed files to '/home/adeola/CMP9767-Assessment/build/limo_assessment/install.log'
+[2.163s] Invoked command in '/home/adeola/CMP9767-Assessment/src/limo_assessment' returned '0': PYTHONPATH=/home/adeola/CMP9767-Assessment/build/limo_assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/limo_assessment build --build-base /home/adeola/CMP9767-Assessment/build/limo_assessment/build install --record /home/adeola/CMP9767-Assessment/build/limo_assessment/install.log --single-version-externally-managed

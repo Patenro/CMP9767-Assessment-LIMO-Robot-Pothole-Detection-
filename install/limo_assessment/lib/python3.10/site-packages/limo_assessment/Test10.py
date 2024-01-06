@@ -1,117 +1,133 @@
 #!/usr/bin/env python3
-import rclpy
 import cv2
 import numpy as np
+import rclpy
 from rclpy.node import Node
-from rclpy import qos
-from cv2 import namedWindow, cvtColor, imshow, inRange
-
-from cv2 import destroyAllWindows, startWindowThread
-from cv2 import COLOR_BGR2GRAY, waitKey
-from cv2 import blur, Canny, resize, INTER_CUBIC
-from numpy import mean
 from sensor_msgs.msg import Image
+from nav_msgs.msg import OccupancyGrid
 from cv_bridge import CvBridge
 
-font = cv2.FONT_HERSHEY_SIMPLEX
-
-class ImageConverter(Node):
+class ColorMappingNode(Node):
     def __init__(self):
-        super().__init__('opencv_test')
-        self.bridge = CvBridge()
-        self.subscription = self.create_subscription(
+        super().__init__('color_mapping_node')
+
+        # Initialize the centroid tracker and other variables
+        self.ct = cv2.TrackerCSRT_create()
+        self.colors = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
+        self.color_counts = {'red': 0, 'green': 0, 'blue': 0, 'custom_color': 0}
+        self.max_sum_total = 0  # Initialize max_sum_total
+
+        # Subscribe to the camera image topic
+        self.image_subscription = self.create_subscription(
             Image,
-            '/limo/depth_camera_link/image_raw',
+            "/limo/depth_camera_link/image_raw",
             self.image_callback,
-            qos.qos_profile_sensor_data
+            10
         )
-        self.subscription  # prevent unused variable warning
-        self.unique_colors = {}
+        self.image_subscription  # Prevent unused variable warning
 
-    def search_contours(self, mask):
-        contours_count = 0
-        contours_area = []
-
-        contours, hierarchy = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        # Publisher for the occupancy grid map
+        self.map_publisher = self.create_publisher(
+            OccupancyGrid,
+            "/map_new",
+            10
         )
+        self.get_logger().info('The robot is counting the potholes')
 
-        for contour in contours:
-            cv2.drawContours(self.cv_image, [contour], -1, (0, 255, 0), 2)
+        self.bridge = CvBridge()
 
-            area = cv2.contourArea(contour)
-            contours_area.append(area)
-
-            M = cv2.moments(contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-            else:
-                cX, cY = 0, 0
-            cv2.putText(
-                self.cv_image,
-                f"{contours_count}",
-                (cX - 25, cY - 25),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-                2,
-            )
-
-            contours_count += 1
-
-        return contours_count, contours_area
+    def print_max_sum_total(self, current_sum_total):
+        self.max_sum_total = max(current_sum_total, self.max_sum_total)
+        print(f"Total Pothole Count: {self.max_sum_total}")
 
     def image_callback(self, msg):
-        namedWindow("Image window")
-        namedWindow("Masked")
+        # Convert the ROS Image message to a BGR image
+        frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
-        self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        self.cv_image = resize(
-            self.cv_image, None, fx=1, fy=1, interpolation=INTER_CUBIC
-        )
+        # Convert the frame to HSV color space
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
+        # Initialize the sum total
+        sum_total = 0
 
-        lower_pink = np.array([150, 50, 50])
-        upper_pink = np.array([170, 255, 255])
+        # Detect colors in the frame
+        for color, rgb in self.colors.items():
+            lower = np.array([150, 50, 50], dtype=np.uint8)
+            upper = np.array([170, 255, 255], dtype=np.uint8)
+            
+            mask = cv2.inRange(hsv, lower, upper)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        mask = cv2.inRange(hsv, lower_pink, upper_pink)
+            # Update color counts using contour areas
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if area > 100:  # Adjust the area threshold as needed
+                    self.color_counts[color] += 1
+                    sum_total += 1
+                    x, y, w, h = cv2.boundingRect(contour)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), rgb, 2)
 
-        count, areas = self.search_contours(mask)
+        # Publish the occupancy grid map
+        occupancy_grid = self.create_occupancy_grid(frame)
+        self.map_publisher.publish(occupancy_grid)
 
-        imshow("Image window", self.cv_image)
-        imshow("Masked", mask)
+        # Print the sum total
+        print("Counting:", sum_total)
 
-        waitKey(1)
+        # Print the max sum total
+        self.print_max_sum_total(sum_total)
 
-        print("Number of contours:", count)
-        print("Areas of contours:", areas)
+    def create_occupancy_grid(self, frame):
+        # Get the dimensions of the frame
+        height, width, _ = frame.shape
 
-        # Count and track unique colors
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        # Create an empty occupancy grid map
+        occupancy_map = np.zeros((height, width), dtype=np.int8)
 
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > 100:  # Adjust the area threshold as needed
-                x, y, w, h = cv2.boundingRect(contour)
-                centroid_x = x + (w // 2)
-                centroid_y = y + (h // 2)
-                pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
-                if pixel_color not in self.unique_colors:
-                    self.unique_colors[pixel_color] = 1
+        # Iterate over each pixel in the frame
+        for y in range(height):
+            for x in range(width):
+                pixel = frame[y, x]
+                for color, rgb in self.colors.items():
+                    if np.array_equal(pixel, rgb):
+                        occupancy_map[y, x] = 100  # Set cell as occupied
+                        break
+                else:
+                    occupancy_map[y, x] = -1  # Set cell as unknown
 
-        unique_colors_count = len(self.unique_colors)
-        print("Number of unique colors:", unique_colors_count)
+        # Create an OccupancyGrid message
+        occupancy_grid = OccupancyGrid()
+        occupancy_grid.header.stamp = self.get_clock().now().to_msg()
+        occupancy_grid.header.frame_id = "map"
+        occupancy_grid.info.resolution = 0.05  # Adjust as needed
+        occupancy_grid.info.width = width
+        occupancy_grid.info.height = height
+        occupancy_grid.info.origin.position.x = 0.0
+        occupancy_grid.info.origin.position.y = 0.0
+        occupancy_grid.info.origin.position.z = 0.0
+        occupancy_grid.info.origin.orientation.x = 0.0
+        occupancy_grid.info.origin.orientation.y = 0.0
+        occupancy_grid.info.origin.orientation.z = 0.0
+        occupancy_grid.info.origin.orientation.w = 1.0
+
+        # Convert the occupancy map to a 1D array
+        occupancy_data = occupancy_map.flatten().tolist()
+        occupancy_grid.data = occupancy_data
+
+        return occupancy_grid
+
+    def run(self):
+        rclpy.spin(self)
+
+        # Print the color counts
+        for color, count in self.color_counts.items():
+            print(f"{color}: {count}")
 
 def main(args=None):
     rclpy.init(args=args)
-    image_converter = ImageConverter()
-    rclpy.spin(image_converter)
-
-    image_converter.destroy_node()
+    color_mapping_node = ColorMappingNode()
+    color_mapping_node.run()
+    color_mapping_node.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
