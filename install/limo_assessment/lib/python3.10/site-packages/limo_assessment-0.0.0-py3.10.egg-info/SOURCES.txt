@@ -13,10 +13,12 @@ limo_assessment/Color detection and distance.py
 limo_assessment/Color processing.py
 limo_assessment/Report.py
 limo_assessment/Report2.py
+limo_assessment/Test1.py
 limo_assessment/Test10.py
 limo_assessment/__init__.py
 limo_assessment/autonomous_navigation.py
 limo_assessment/pothole_counter.py
+limo_assessment/test2.py
 resource/limo_assessment
 test/test_copyright.py
 test/test_flake8.py

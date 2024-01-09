@@ -20,7 +20,7 @@ class Mover(Node):
         super().__init__('autonomous_navigation')
         self.publisher = self.create_publisher(Twist, "/cmd_vel", 10)
         self.subscriber = self.create_subscription(LaserScan, "/scan", self.laserscan_callback, 10)
-        self.get_logger().info('The robot is moving')
+        self.get_logger().info('THE ROBOT IS AUTONOMOUS NOW')
     
     def laserscan_callback(self, data):
         """

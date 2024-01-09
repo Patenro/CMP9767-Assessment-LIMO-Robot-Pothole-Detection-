@@ -2,18 +2,22 @@
 import rclpy
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
 from rclpy.node import Node
 from rclpy import qos
 from cv2 import namedWindow, resize
 from cv2 import COLOR_BGR2HSV, inRange
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+import os
+import threading
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 class ImageConverter(Node):
     def __init__(self):
-        super().__init__("opencv_test")
+        super().__init__("Pothole_Severity_Detector")
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(
             Image,
@@ -32,6 +36,31 @@ class ImageConverter(Node):
         self.depth_image = None
         self.unique_colors = {}
         self.logger = self.get_logger()
+
+        # Open log file for writing, overwriting previous content
+        self.log_file_path = "severity_log.txt"
+        with open(self.log_file_path, "w") as file:
+            file.write("Pothole Severity Log\n")
+        self.log_file = open(self.log_file_path, "a")
+
+        self.severities_list = []  # Initialize list to store severities
+
+        self.plot_thread = threading.Thread(target=self.plot_bar_graph_thread, daemon=True)
+        self.plot_thread.start()
+
+    def __del__(self):
+        # Close the log file when the object is destroyed
+        self.log_file.close()
+
+    def get_severity_level(self, severity):
+        if severity < 1500:
+            return "Slightly Severe"
+        elif 1500 <= severity <= 4000:
+            return "Moderately Severe"
+        elif 4001 <= severity <= 6000:
+            return "Highly Severe"
+        else:
+            return "Dangerously Severe"
 
     def search_contours(self, mask):
         contours_area = []
@@ -108,11 +137,18 @@ class ImageConverter(Node):
                     if pixel_color not in self.unique_colors:
                         self.unique_colors[pixel_color] = 1
 
+                    # Append severity level to the list
+                    severity_level = self.get_severity_level(area)
+                    self.severities_list.append(severity_level)
+
+                    # Append severity level to the log file
+                    self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
+                    self.log_file.flush()
+
         return contours, contours_area, severities, closest_contour
 
     def image_callback(self, data):
-        namedWindow("Image window")
-        #namedWindow("Masked")
+        namedWindow("Image window showing the distance to each pothole and their severity")
 
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
@@ -126,21 +162,41 @@ class ImageConverter(Node):
 
         contours, contours_area, severities, closest_contour = self.search_contours(mask)
 
-        cv2.imshow("Image window", self.cv_image)
-        #cv2.imshow("Masked", mask)
+        cv2.imshow("Image window showing the distance to each pothole and their severity", self.cv_image)
         cv2.waitKey(1)
 
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
-            self.logger.info(f"Severity of closest color: {severity}")
+            self.logger.info(f"Severity of closest color: {severity}, Level: {self.get_severity_level(severity)}")
+            self.log_file.write(f"Pothole Severity: {severity}, Level: {self.get_severity_level(severity)}\n")
+            self.log_file.flush()
 
     def depth_callback(self, data):
         self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
 
+    def plot_bar_graph_thread(self):
+        while rclpy.ok():
+            if self.severities_list:
+                severity_levels = ["Slightly Severe", "Moderately Severe", "Highly Severe", "Dangerously Severe"]
+                severity_counts = [self.severities_list.count(level) for level in severity_levels]
+
+                plt.bar(severity_levels, severity_counts, color=['blue', 'orange', 'green', 'red'])
+                plt.xlabel('Severity Level')
+                plt.ylabel('Count')
+                plt.title('Pothole Severity Distribution')
+                plt.show(block=False)
+                plt.pause(0.001)
+            rclpy.spin_once(self, timeout_sec=0.1)
+
 def main(args=None):
     rclpy.init(args=args)
     image_converter = ImageConverter()
-    rclpy.spin(image_converter)
+
+    try:
+        rclpy.spin(image_converter)
+    except KeyboardInterrupt:
+        pass
+
     image_converter.destroy_node()
     rclpy.shutdown()
 

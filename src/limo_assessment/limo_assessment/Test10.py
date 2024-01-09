@@ -1,131 +1,166 @@
 #!/usr/bin/env python3
+# Python libs
 import rclpy
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt  # Import the matplotlib library
 from rclpy.node import Node
 from rclpy import qos
-from cv2 import namedWindow, resize
-from cv2 import COLOR_BGR2HSV, inRange
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-import os
 
-font = cv2.FONT_HERSHEY_SIMPLEX
+# OpenCV
+import cv2
+import numpy as np
 
-class ImageConverter(Node):
+# ROS libraries
+import image_geometry
+from tf2_ros import Buffer, TransformListener
+from geometry_msgs.msg import PoseStamped
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_geometry_msgs import do_transform_pose
+
+# ROS Messages
+from sensor_msgs.msg import Image, CameraInfo
+
+class ObjectDetector(Node):
+    camera_model = None
+    image_depth_ros = None
+
+    visualisation = True
+    # aspect ratio between color and depth cameras
+    # calculated as (color_horizontal_FOV/color_width) / (depth_horizontal_FOV/depth_width) from the dabai camera parameters
+    color2depth_aspect = 1.0  # for a simulated camera
+
     def __init__(self):
-        super().__init__("Pothole_Severity_Detector")
+        super().__init__('image_projection_3')
         self.bridge = CvBridge()
-        self.image_sub = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/image_raw",
-            self.image_callback,
-            qos_profile=qos.qos_profile_sensor_data,
-        )
 
-        self.depth_sub = self.create_subscription(
-            Image,
-            "/limo/depth_camera_link/depth/image_raw",
-            self.depth_callback,
-            qos_profile=qos.qos_profile_sensor_data,
-        )
+        self.camera_info_sub = self.create_subscription(CameraInfo, '/limo/depth_camera_link/camera_info',
+                                                        self.camera_info_callback,
+                                                        qos_profile=qos.qos_profile_sensor_data)
 
-        self.depth_image = None
-        self.severity_counts = {'Slightly Severe': 0, 'Moderately Severe': 0, 'Highly Severe': 0, 'Dangerously Severe': 0}
-        self.logger = self.get_logger()
+        self.object_location_pub = self.create_publisher(PoseStamped, '/limo/object_location', 10)
+        self.detected_color_pose_pub = self.create_publisher(PoseStamped, '/limo/detected_color_pose', 10)
 
-        # Open log file for writing, overwriting previous content
-        self.log_file_path = "severity_log.txt"
-        with open(self.log_file_path, "w") as file:
-            file.write("Pothole Severity Log\n")
-        self.log_file = open(self.log_file_path, "a")
+        self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/image_raw',
+                                                  self.image_color_callback, qos_profile=qos.qos_profile_sensor_data)
 
-    def __del__(self):
-        # Close the log file when the object is destroyed
-        self.log_file.close()
+        self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/depth/image_raw',
+                                                  self.image_depth_callback, qos_profile=qos.qos_profile_sensor_data)
 
-    def get_severity_level(self, severity):
-        if severity < 1500:
-            return "Slightly Severe"
-        elif 1500 <= severity <= 4000:
-            return "Moderately Severe"
-        elif 4001 <= severity <= 6000:
-            return "Highly Severe"
-        else:
-            return "Dangerously Severe"
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
-    def search_contours(self, mask):
-        severities = []
+        # Pink HSV color range
+        self.lower_pink = np.array([150, 50, 50], dtype=np.uint8)
+        self.upper_pink = np.array([170, 255, 255], dtype=np.uint8)
 
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        # Dictionary to store detected poses based on contour ID
+        self.detected_poses = {}
+
+    def camera_info_callback(self, data):
+        if not self.camera_model:
+            self.camera_model = image_geometry.PinholeCameraModel()
+        self.camera_model.fromCameraInfo(data)
+
+    def image_depth_callback(self, data):
+        self.image_depth_ros = data
+
+    def image_color_callback(self, data):
+        # wait for camera_model and depth image to arrive
+        if self.camera_model is None:
+            return
+
+        if self.image_depth_ros is None:
+            return
+
+        # convert images to OpenCV
+        try:
+            image_color = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            image_depth = self.bridge.imgmsg_to_cv2(self.image_depth_ros, "32FC1")
+        except CvBridgeError as e:
+            print(e)
+
+        # convert color image to HSV
+        image_hsv = cv2.cvtColor(image_color, cv2.COLOR_BGR2HSV)
+
+        # create a mask using the specified HSV color range for pink
+        image_mask_pink = cv2.inRange(image_hsv, self.lower_pink, self.upper_pink)
+
+        # find contours in the mask
+        contours, _ = cv2.findContours(image_mask_pink, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
-            area = cv2.contourArea(contour)
-            severities.append(area)
+            # calculate the centroid of the contour
+            M = cv2.moments(contour)
+            if M["m00"] == 0:
+                continue  # skip if the contour has zero area
 
-            if area > 100:
-                severity_level = self.get_severity_level(area)
-                self.severity_counts[severity_level] += 1
+            centroid_x = int(M["m10"] / M["m00"])
+            centroid_y = int(M["m01"] / M["m00"])
 
-                x, y, w, h = cv2.boundingRect(contour)
-                centroid_x = x + (w // 2)
-                centroid_y = y + (h // 2)
+            # check if contour ID is already in the detected poses dictionary
+            contour_id = cv2.contourArea(contour)
+            if contour_id in self.detected_poses:
+                continue  # skip if the pose for this contour ID has already been detected
 
-                pixel_color = tuple(self.cv_image[centroid_y, centroid_x])
+            # "map" from color to depth image
+            depth_coords = (
+                image_depth.shape[0] / 2 + (centroid_y - image_color.shape[0] / 2) * self.color2depth_aspect,
+                image_depth.shape[1] / 2 + (centroid_x - image_color.shape[1] / 2) * self.color2depth_aspect)
 
-                # Append severity level to the log file
-                self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
-                self.log_file.flush()
+            # get the depth reading at the centroid location
+            depth_value = image_depth[int(depth_coords[0]), int(depth_coords[1])]
 
-        return severities
+            print('centroid coords: ', (centroid_x, centroid_y))
+            print('depth coords: ', depth_coords)
+            print('depth value: ', depth_value)
 
-    def plot_severity_graph(self):
-        severity_levels = list(self.severity_counts.keys())
-        count_values = list(self.severity_counts.values())
+            # calculate object's 3D location in camera coords
+            camera_coords = self.camera_model.projectPixelTo3dRay(
+                (centroid_y, centroid_x))  # project the image coords (x,y) into 3D ray in camera coords
+            camera_coords = [x / camera_coords[2] for x in camera_coords]  # adjust the resulting vector so that z = 1
+            camera_coords = [x * depth_value for x in camera_coords]  # multiply the vector by depth
 
-        # Plotting the bar graph
-        plt.bar(severity_levels, count_values, color='blue')
-        plt.xlabel('Severity Level')
-        plt.ylabel('Count')
-        plt.title('Count of Potholes by Severity Level')
+            print('camera coords: ', camera_coords)
 
-        # Save the plot to an image file
-        plt.savefig('severity_plot.png')
-        plt.close()
+            # define a point in camera coordinates
+            object_location = PoseStamped()
+            object_location.header.frame_id = "depth_link"
+            object_location.pose.orientation.w = 1.0
+            object_location.pose.position.x = camera_coords[0]
+            object_location.pose.position.y = camera_coords[1]
+            object_location.pose.position.z = camera_coords[2]
 
-    def image_callback(self, data):
-        namedWindow("Image window showing the distance to each pothole and their severity")
+            # transform the pose to /odom frame
+            try:
+                transform = self.tf_buffer.lookup_transform('odom', 'depth_link', rclpy.time.Time())
+                transformed_pose = do_transform_pose(object_location.pose, transform)
+                object_location.header.frame_id = "odom"
+                object_location.pose = transformed_pose.pose
+            except Exception as e:
+                print(f"Failed to transform pose: {str(e)}")
 
-        self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
+            # publish the pose
+            self.detected_color_pose_pub.publish(object_location)
+            self.detected_poses[contour_id] = True  # mark this contour ID as detected
 
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
+            if self.visualisation:
+                # draw contour
+                cv2.drawContours(image_color, [contour], -1, (0, 255, 0), 2)
+                # draw centroid
+                cv2.circle(image_color, (centroid_x, centroid_y), 5, (0, 0, 255), -1)
 
-        lower_pink = np.array([150, 50, 50])
-        upper_pink = np.array([170, 255, 255])
+                # resize and adjust for visualization
+                image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)
+                image_depth *= 1.0 / 10.0  # scale for visualization (max range 10.0 m)
 
-        mask = cv2.inRange(hsv, lower_pink, upper_pink)
-
-        severities = self.search_contours(mask)
-
-        cv2.imshow("Image window showing the distance to each pothole and their severity", self.cv_image)
-        cv2.waitKey(1)
-
-        # Plot the severity graph
-        self.plot_severity_graph()
-
-    def depth_callback(self, data):
-        self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
+                cv2.imshow("image depth", image_depth)
+                cv2.imshow("image color", image_color)
+                cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
-    image_converter = ImageConverter()
-    rclpy.spin(image_converter)
-    image_converter.destroy_node()
+    image_projection = ObjectDetector()
+    rclpy.spin(image_projection)
+    image_projection.destroy_node()
     rclpy.shutdown()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

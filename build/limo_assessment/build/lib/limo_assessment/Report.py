@@ -33,6 +33,7 @@ class ImageConverter(Node):
         self.depth_image = None
         self.unique_colors = {}
         self.logger = self.get_logger()
+        self.logger.info('REPORT NODE INITIALIZED')
 
         # Open log file for writing, overwriting previous content
         self.log_file_path = "severity_log.txt"

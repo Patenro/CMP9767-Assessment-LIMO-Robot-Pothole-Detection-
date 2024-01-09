@@ -1,71 +1,64 @@
 #!/usr/bin/env python3
-import cv2
-import numpy as np
+# Python libs
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import PointStamped, TransformStamped
-from nav_msgs.msg import Odometry
-from cv_bridge import CvBridge, CvBridgeError
-from tf2_ros import StaticTransformBroadcaster, Buffer
-from tf2_geometry_msgs import do_transform_pose
+from rclpy import qos
+
+# OpenCV
+import cv2
+import numpy as np
+
+# ROS libraries
 import image_geometry
-import matplotlib.pyplot as plt
+from tf2_ros import Buffer, TransformListener
 
-class ColorMappingNode(Node):
+# ROS Messages
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PoseStamped
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_geometry_msgs import do_transform_pose
+
+class ObjectDetector(Node):
+    camera_model = None
+    image_depth_ros = None
+
+    visualisation = True
+    # aspect ratio between color and depth cameras
+    # calculated as (color_horizontal_FOV/color_width) / (depth_horizontal_FOV/depth_width) from the dabai camera parameters
+    color2depth_aspect = 1.0  # for a simulated camera
+
     def __init__(self):
-        super().__init__('color_mapping_node')
-
+        super().__init__('image_projection_3')
         self.bridge = CvBridge()
-        self.camera_model = None
-        self.image_depth_ros = None
-        self.color_counter = 1
-        self.odom_coords = None
-        self.color_coordinates = []
 
-        # Color range for detection
-        self.lower_color = np.array([150, 50, 50], dtype=np.uint8)
-        self.upper_color = np.array([170, 255, 255], dtype=np.uint8)
+        self.camera_info_sub = self.create_subscription(CameraInfo, '/limo/depth_camera_link/camera_info',
+                                                        self.camera_info_callback,
+                                                        qos_profile=qos.qos_profile_sensor_data)
 
-        # Subscribe to camera info, color image, and depth image topics
-        self.camera_info_sub = self.create_subscription(
-            CameraInfo,
-            '/limo/depth_camera_link/camera_info',
-            self.camera_info_callback,
-            10
-        )
+        self.object_location_pub = self.create_publisher(PoseStamped, '/limo/object_location', 10)
+        self.detected_color_pose_pub = self.create_publisher(PoseStamped, '/limo/detected_color_pose', 10)
+        self.p_color_pose_pub = self.create_publisher(PoseStamped, '/limo/p_color_pose', 10)
+        
+        self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/image_raw',
+                                                  self.image_color_callback, qos_profile=qos.qos_profile_sensor_data)
 
-        self.image_color_sub = self.create_subscription(
-            Image,
-            '/limo/depth_camera_link/image_raw',
-            self.image_color_callback,
-            10
-        )
+        self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/depth/image_raw',
+                                                  self.image_depth_callback, qos_profile=qos.qos_profile_sensor_data)
 
-        self.image_depth_sub = self.create_subscription(
-            Image,
-            '/limo/depth_camera_link/depth/image_raw',
-            self.image_depth_callback,
-            10
-        )
-
-        self.odom_sub = self.create_subscription(
-            Odometry,
-            '/odom',
-            self.odom_callback,
-            10
-        )
-
-        # Publisher for color locations
-        self.color_location_pub = self.create_publisher(
-            PointStamped,
-            '/limo/color_location',
-            10
-        )
-
-        # TF Broadcaster for static transforms
-        self.tf_broadcaster = StaticTransformBroadcaster(self)
         self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # Pink HSV color range
+        self.lower_pink = np.array([150, 50, 50], dtype=np.uint8)
+        self.upper_pink = np.array([170, 255, 255], dtype=np.uint8)
+
+    def get_tf_transform(self, target_frame, source_frame):
+        try:
+            transform = self.tf_buffer.lookup_transform(target_frame, source_frame, rclpy.time.Time())
+            return transform
+        except Exception as e:
+            self.get_logger().warning(f"Failed to lookup transform: {str(e)}")
+            return None
 
     def camera_info_callback(self, data):
         if not self.camera_model:
@@ -76,135 +69,113 @@ class ColorMappingNode(Node):
         self.image_depth_ros = data
 
     def image_color_callback(self, data):
-        # Wait for camera_model and depth image to arrive
-        if self.camera_model is None or self.image_depth_ros is None:
+        # wait for camera_model and depth image to arrive
+        if self.camera_model is None:
             return
 
+        if self.image_depth_ros is None:
+            return
+
+        # convert images to OpenCV
         try:
             image_color = self.bridge.imgmsg_to_cv2(data, "bgr8")
             image_depth = self.bridge.imgmsg_to_cv2(self.image_depth_ros, "32FC1")
         except CvBridgeError as e:
-            print("Error converting images:", str(e))
+            print(e)
+
+        # convert color image to HSV
+        image_hsv = cv2.cvtColor(image_color, cv2.COLOR_BGR2HSV)
+
+        # create a mask using the specified HSV color range for pink
+        image_mask_pink = cv2.inRange(image_hsv, self.lower_pink, self.upper_pink)
+
+        # find contours in the mask
+        contours, _ = cv2.findContours(image_mask_pink, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if len(contours) == 0:
+            print('No pink object detected.')
             return
 
-        # Process color blob
-        result = self.process_color_blob(image_color, image_depth)
-        if result:
-            image_coords, depth_value = result
+        # find the largest contour
+        max_contour = max(contours, key=cv2.contourArea)
 
-            # Calculate 3D coordinates
-            camera_coords = self.calculate_3d_coordinates(image_coords, depth_value)
+        # calculate the bounding box around the contour
+        x, y, w, h = cv2.boundingRect(max_contour)
 
-            # Broadcast TF frame on the detected color
-            self.broadcast_tf_frame(f'color_frame_{self.color_counter}', 'depth_camera_link', image_coords, depth_value)
+        # calculate the centroid of the bounding box
+        centroid_x = x + w // 2
+        centroid_y = y + h // 2
 
-            # Publish color location
-            self.publish_color_location(camera_coords)
+        # check if centroid coordinates are within the image bounds
+        if 0 <= centroid_x < image_color.shape[1] and 0 <= centroid_y < image_color.shape[0]:
+            # "map" from color to depth image
+            depth_coords = (
+                image_depth.shape[0] / 2 + (centroid_y - image_color.shape[0] / 2) * self.color2depth_aspect,
+                image_depth.shape[1] / 2 + (centroid_x - image_color.shape[1] / 2) * self.color2depth_aspect)
 
-    def process_color_blob(self, image_color, image_depth):
-        # Detect a color blob in the color image
-        image_mask = cv2.inRange(image_color, self.lower_color, self.upper_color)
+            # get the depth reading at the centroid location
+            depth_value = image_depth[int(depth_coords[0]), int(depth_coords[1])]
 
-        # Calculate moments of the binary image
-        M = cv2.moments(image_mask)
+            print('centroid coords: ', (centroid_x, centroid_y))
+            print('depth coords: ', depth_coords)
+            print('depth value: ', depth_value)
 
-        if M["m00"] == 0:
-            print('No object detected.')
-            return None
+            # calculate object's 3D location in camera coords
+            camera_coords = self.camera_model.projectPixelTo3dRay(
+                (centroid_y, centroid_x))  # project the image coords (x,y) into 3D ray in camera coords
+            camera_coords = [x / camera_coords[2] for x in camera_coords]  # adjust the resulting vector so that z = 1
+            camera_coords = [x * depth_value for x in camera_coords]  # multiply the vector by depth
 
-        # Calculate the y, x centroid
-        image_coords = (M["m01"] / M["m00"], M["m10"] / M["m00"])
-        # Get the depth reading at the centroid location
-        depth_value = image_depth[int(image_coords[0]), int(image_coords[1])]  # You might need to do some boundary checking first!
+            print('camera coords: ', camera_coords)
 
-        return image_coords, depth_value
+            # define a point in camera coordinates
+            object_location = PoseStamped()
+            object_location.header.frame_id = "depth_link"
+            object_location.pose.orientation.w = 1.0
+            object_location.pose.position.x = camera_coords[0]
+            #object_location.pose.position.y = camera_coords[1]
+            object_location.pose.position.z = camera_coords[2]
 
-    def calculate_3d_coordinates(self, image_coords, depth_value):
-        # Calculate object's 3D location in camera coords
-        camera_coords = self.camera_model.projectPixelTo3dRay((image_coords[1], image_coords[0]))
-        camera_coords = [x * depth_value for x in camera_coords]
+            # publish the PoseStamped of the detected color
+            self.detected_color_pose_pub.publish(object_location)
 
-        return camera_coords
+            # publish so we can see that in rviz
+            self.object_location_pub.publish(object_location)
 
-    def broadcast_tf_frame(self, frame_id, parent_frame_id, image_coords, depth_value):
-        # Convert coordinates to integers
-        image_coords = (int(image_coords[0]), int(image_coords[1]))
+            # print out the coordinates in the odom frame
+            transform = self.get_tf_transform('map','depth_link')
+            if transform:
+                p_camera = do_transform_pose(object_location.pose, transform)
+                
+                p_location = PoseStamped()
+                p_location.header.frame_id = "map"
+                p_location.pose = p_camera
+                p_location.pose.orientation.w = 1.0
+                
+                
+                
+                self.p_color_pose_pub.publish(p_location)
+                
+                print('odom coords: ', p_camera.position)
+                
 
-        # Broadcast a static transform from color frame to depth camera frame
-        transform = TransformStamped()
-        transform.header.stamp = self.get_clock().now().to_msg()
-        transform.header.frame_id = parent_frame_id
-        transform.child_frame_id = frame_id
-        transform.transform.translation.x = float(image_coords[1])
-        transform.transform.translation.y = float(image_coords[0])
-        transform.transform.translation.z = float(depth_value)
-        transform.transform.rotation.w = 1.0  # No rotation
+            if self.visualisation:
+                # draw bounding box
+                cv2.rectangle(image_color, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        self.tf_broadcaster.sendTransform(transform)
+                # resize and adjust for visualization
+                image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)
+                image_depth *= 1.0 / 10.0  # scale for visualization (max range 10.0 m)
 
-    def publish_color_location(self, camera_coords):
-        if camera_coords and self.odom_coords:
-            # Calculate color location with respect to the /odom frame
-            odom_relative_coords = (
-                camera_coords[0] + self.odom_coords[0],
-                camera_coords[1] + self.odom_coords[1],
-                camera_coords[2] + self.odom_coords[2]
-            )
-
-            # Convert coordinates to integers
-            odom_relative_coords = (
-                int(odom_relative_coords[0]),
-                int(odom_relative_coords[1]),
-                int(odom_relative_coords[2])
-            )
-
-            # Store color coordinates
-            self.color_coordinates.append(odom_relative_coords)
-
-            # Publish color location with a unique identifier
-            color_location = PointStamped()
-            color_location.header.frame_id = "odom"
-            color_location.point.x = float(odom_relative_coords[0])
-            color_location.point.y = float(odom_relative_coords[1])
-            color_location.point.z = float(odom_relative_coords[2])
-
-            # Print the result
-            self.get_logger().info(f'Color{self.color_counter}: x={odom_relative_coords[0]}, y={odom_relative_coords[1]}, z={odom_relative_coords[2]} with reference to the odom')
-
-            self.color_location_pub.publish(color_location)
-
-            # Increment color identifier counter
-            self.color_counter += 1
-
-    def odom_callback(self, msg):
-        # Store the odometry coordinates
-        self.odom_coords = (msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z)
-
-    def plot_color_coordinates(self):
-        if self.odom_coords is None or not self.color_coordinates:
-            return
-
-        # Extract x, y coordinates
-        x_coords = [coord[0] for coord in self.color_coordinates]
-        y_coords = [coord[1] for coord in self.color_coordinates]
-
-        # Plot color coordinates
-        plt.figure()
-        plt.scatter(x_coords, y_coords, label='Detected Colors', color='r')
-        plt.scatter(self.odom_coords[0], self.odom_coords[1], label='Odom', color='b')
-        plt.xlabel('X-axis (meters)')
-        plt.ylabel('Y-axis (meters)')
-        plt.title('Detected Colors and Odom')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+                cv2.imshow("image depth", image_depth)
+                cv2.imshow("image color", image_color)
+                cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
-    color_mapping_node = ColorMappingNode()
-    rclpy.spin(color_mapping_node)
-    color_mapping_node.plot_color_coordinates()  # Plot color coordinates after spinning
-    color_mapping_node.destroy_node()
+    image_projection = ObjectDetector()
+    rclpy.spin(image_projection)
+    image_projection.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
