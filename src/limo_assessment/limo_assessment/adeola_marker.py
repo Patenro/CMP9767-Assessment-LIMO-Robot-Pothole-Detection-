@@ -19,6 +19,7 @@ class PoseMarkerSubscriber(Node):
         self.marker_publisher = self.create_publisher(Marker, '/limo/pose_marker', 10)
         self.marker_id_counter = 1  # counter for assigning unique IDs to markers
         self.marker_list = []  # to store the existing markers
+        self.get_logger().info("POTHOLE LOCATIONS ARE BEING DETECTED AND MARKED ON THE MAP")
 
     def calculate_distance(self, pose1, pose2):
         # Calculate Euclidean distance between two poses

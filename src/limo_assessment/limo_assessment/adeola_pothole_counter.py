@@ -32,7 +32,7 @@ class ColorMappingNode(Node):
             "/map_new",
             10
         )
-        self.get_logger().info('The robot is counting the potholes')
+        self.get_logger().info('THE ROBOT IS COUNTING THE POTHOLES')
 
         self.bridge = CvBridge()
 

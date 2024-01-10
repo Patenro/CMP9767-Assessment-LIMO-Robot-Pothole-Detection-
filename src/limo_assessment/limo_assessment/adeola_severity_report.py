@@ -34,6 +34,7 @@ class ImageConverter(Node):
         self.depth_image = None
         self.unique_colors = {}
         self.logger = self.get_logger()
+        self.logger.info('REPORT NODE INITIALIZED')
 
         # Open log file for writing, overwriting previous content
         self.log_file_path = "severity_log.txt"
@@ -76,7 +77,8 @@ class ImageConverter(Node):
 
             area = cv2.contourArea(contour)
             contours_area.append(area)
-
+            
+            # Calculate the center of the contour
             M = cv2.moments(contour)
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
@@ -155,7 +157,7 @@ class ImageConverter(Node):
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
             severity_level = self.get_severity_level(severity)
-            self.logger.info(f"Severity of closest color: {severity}, Level: {severity_level}")
+            #self.logger.info(f"Severity of closest color: {severity}, Level: {severity_level}")
             self.log_file.write(f"Pothole Severity: {severity}, Level: {severity_level}\n")
             self.log_file.flush()
 
@@ -179,7 +181,7 @@ class ImageConverter(Node):
             plt.bar(severity_counts.keys(), severity_counts.values(), color=['blue', 'orange', 'green', 'red'])
             plt.xlabel('Severity Level')
             plt.ylabel('Count')
-            plt.title('Pothole Severity Distribution (All Contours)')
+            plt.title('Pothole Severity Distribution Report')
             plt.savefig('pothole_severity_report.png')
             plt.show(block=False)
             plt.pause(0.001)

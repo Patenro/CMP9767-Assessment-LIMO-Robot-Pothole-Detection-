@@ -47,7 +47,7 @@ class ObjectDetector(Node):
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-
+        self.get_logger().info('POSE DETECTOR NODE INITIALIZED')
         # Pink HSV color range
         self.lower_pink = np.array([150, 50, 50], dtype=np.uint8)
         self.upper_pink = np.array([170, 255, 255], dtype=np.uint8)
@@ -116,9 +116,9 @@ class ObjectDetector(Node):
             # get the depth reading at the centroid location
             depth_value = image_depth[int(depth_coords[0]), int(depth_coords[1])]
 
-            print('centroid coords: ', (centroid_x, centroid_y))
-            print('depth coords: ', depth_coords)
-            print('depth value: ', depth_value)
+            #print('centroid coords: ', (centroid_x, centroid_y))
+            #print('depth coords: ', depth_coords)
+            #print('depth value: ', depth_value)
 
             # calculate object's 3D location in camera coords
             camera_coords = self.camera_model.projectPixelTo3dRay(
@@ -165,9 +165,9 @@ class ObjectDetector(Node):
                 image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)
                 image_depth *= 1.0 / 10.0  # scale for visualization (max range 10.0 m)
 
-                cv2.imshow("image depth", image_depth)
-                cv2.imshow("image color", image_color)
-                cv2.waitKey(1)
+                #cv2.imshow("image depth", image_depth)
+                #cv2.imshow("image color", image_color)
+                #cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
