@@ -17,6 +17,7 @@ limo_assessment/Test1.py
 limo_assessment/Test10.py
 limo_assessment/__init__.py
 limo_assessment/autonomous_navigation.py
+limo_assessment/mover2.py
 limo_assessment/pothole_counter.py
 limo_assessment/test2.py
 resource/limo_assessment

@@ -11,12 +11,12 @@ import numpy as np
 # ROS libraries
 import image_geometry
 from tf2_ros import Buffer, TransformListener
-from geometry_msgs.msg import PoseStamped
-from cv_bridge import CvBridge, CvBridgeError
-from tf2_geometry_msgs import do_transform_pose
 
 # ROS Messages
 from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PoseStamped
+from cv_bridge import CvBridge, CvBridgeError
+from tf2_geometry_msgs import do_transform_pose
 
 class ObjectDetector(Node):
     camera_model = None
@@ -37,7 +37,8 @@ class ObjectDetector(Node):
 
         self.object_location_pub = self.create_publisher(PoseStamped, '/limo/object_location', 10)
         self.detected_color_pose_pub = self.create_publisher(PoseStamped, '/limo/detected_color_pose', 10)
-
+        self.p_color_pose_pub = self.create_publisher(PoseStamped, '/limo/p_color_pose', 10)
+        
         self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/image_raw',
                                                   self.image_color_callback, qos_profile=qos.qos_profile_sensor_data)
 
@@ -51,8 +52,13 @@ class ObjectDetector(Node):
         self.lower_pink = np.array([150, 50, 50], dtype=np.uint8)
         self.upper_pink = np.array([170, 255, 255], dtype=np.uint8)
 
-        # Dictionary to store detected poses based on contour ID
-        self.detected_poses = {}
+    def get_tf_transform(self, target_frame, source_frame):
+        try:
+            transform = self.tf_buffer.lookup_transform(target_frame, source_frame, rclpy.time.Time())
+            return transform
+        except Exception as e:
+            self.get_logger().warning(f"Failed to lookup transform: {str(e)}")
+            return None
 
     def camera_info_callback(self, data):
         if not self.camera_model:
@@ -86,20 +92,22 @@ class ObjectDetector(Node):
         # find contours in the mask
         contours, _ = cv2.findContours(image_mask_pink, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        for contour in contours:
-            # calculate the centroid of the contour
-            M = cv2.moments(contour)
-            if M["m00"] == 0:
-                continue  # skip if the contour has zero area
+        if len(contours) == 0:
+            print('No pink object detected.')
+            return
 
-            centroid_x = int(M["m10"] / M["m00"])
-            centroid_y = int(M["m01"] / M["m00"])
+        # find the largest contour
+        max_contour = max(contours, key=cv2.contourArea)
 
-            # check if contour ID is already in the detected poses dictionary
-            contour_id = cv2.contourArea(contour)
-            if contour_id in self.detected_poses:
-                continue  # skip if the pose for this contour ID has already been detected
+        # calculate the bounding box around the contour
+        x, y, w, h = cv2.boundingRect(max_contour)
 
+        # calculate the centroid of the bounding box
+        centroid_x = x + w // 2
+        centroid_y = y + h // 2
+
+        # check if centroid coordinates are within the image bounds
+        if 0 <= centroid_x < image_color.shape[1] and 0 <= centroid_y < image_color.shape[0]:
             # "map" from color to depth image
             depth_coords = (
                 image_depth.shape[0] / 2 + (centroid_y - image_color.shape[0] / 2) * self.color2depth_aspect,
@@ -125,27 +133,33 @@ class ObjectDetector(Node):
             object_location.header.frame_id = "depth_link"
             object_location.pose.orientation.w = 1.0
             object_location.pose.position.x = camera_coords[0]
-            object_location.pose.position.y = camera_coords[1]
+            #object_location.pose.position.y = camera_coords[1]
             object_location.pose.position.z = camera_coords[2]
 
-            # transform the pose to /odom frame
-            try:
-                transform = self.tf_buffer.lookup_transform('odom', 'depth_link', rclpy.time.Time())
-                transformed_pose = do_transform_pose(object_location.pose, transform)
-                object_location.header.frame_id = "odom"
-                object_location.pose = transformed_pose.pose
-            except Exception as e:
-                print(f"Failed to transform pose: {str(e)}")
-
-            # publish the pose
+            # publish the PoseStamped of the detected color
             self.detected_color_pose_pub.publish(object_location)
-            self.detected_poses[contour_id] = True  # mark this contour ID as detected
+
+            # publish so we can see that in rviz
+            self.object_location_pub.publish(object_location)
+
+            # print out the coordinates in the odom frame
+            transform = self.get_tf_transform('map','depth_link')
+            if transform:
+                p_camera = do_transform_pose(object_location.pose, transform)
+                
+                p_location = PoseStamped()
+                p_location.header.frame_id = "map"
+                p_location.pose = p_camera
+                p_location.pose.orientation.w = 1.0
+                
+                self.p_color_pose_pub.publish(p_location)
+                
+                print('odom coords: ', p_camera.position)
+                
 
             if self.visualisation:
-                # draw contour
-                cv2.drawContours(image_color, [contour], -1, (0, 255, 0), 2)
-                # draw centroid
-                cv2.circle(image_color, (centroid_x, centroid_y), 5, (0, 0, 255), -1)
+                # draw bounding box
+                cv2.rectangle(image_color, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
                 # resize and adjust for visualization
                 image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)

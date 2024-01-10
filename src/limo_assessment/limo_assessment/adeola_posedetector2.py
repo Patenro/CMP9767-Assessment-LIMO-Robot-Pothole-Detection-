@@ -38,7 +38,7 @@ class ObjectDetector(Node):
         self.object_location_pub = self.create_publisher(PoseStamped, '/limo/object_location', 10)
         self.detected_color_pose_pub = self.create_publisher(PoseStamped, '/limo/detected_color_pose', 10)
         self.p_color_pose_pub = self.create_publisher(PoseStamped, '/limo/p_color_pose', 10)
-        
+
         self.image_sub = self.create_subscription(Image, '/limo/depth_camera_link/image_raw',
                                                   self.image_color_callback, qos_profile=qos.qos_profile_sensor_data)
 
@@ -120,56 +120,55 @@ class ObjectDetector(Node):
             print('depth coords: ', depth_coords)
             print('depth value: ', depth_value)
 
-            # calculate object's 3D location in camera coords
-            camera_coords = self.camera_model.projectPixelTo3dRay(
-                (centroid_y, centroid_x))  # project the image coords (x,y) into 3D ray in camera coords
-            camera_coords = [x / camera_coords[2] for x in camera_coords]  # adjust the resulting vector so that z = 1
-            camera_coords = [x * depth_value for x in camera_coords]  # multiply the vector by depth
+            # Check if the depth value is within the desired range (0.2 to 0.4 meters)
+            if 0.2 <= depth_value <= 0.4:
+                # calculate object's 3D location in camera coords
+                camera_coords = self.camera_model.projectPixelTo3dRay(
+                    (centroid_y, centroid_x))  # project the image coords (x,y) into 3D ray in camera coords
+                camera_coords = [x / camera_coords[2] for x in camera_coords]  # adjust the resulting vector so that z = 1
+                camera_coords = [x * depth_value for x in camera_coords]  # multiply the vector by depth
 
-            print('camera coords: ', camera_coords)
+                print('camera coords: ', camera_coords)
 
-            # define a point in camera coordinates
-            object_location = PoseStamped()
-            object_location.header.frame_id = "depth_link"
-            object_location.pose.orientation.w = 1.0
-            object_location.pose.position.x = camera_coords[0]
-            #object_location.pose.position.y = camera_coords[1]
-            object_location.pose.position.z = camera_coords[2]
+                # define a point in camera coordinates
+                object_location = PoseStamped()
+                object_location.header.frame_id = "depth_link"
+                object_location.pose.orientation.w = 1.0
+                object_location.pose.position.x = camera_coords[0]
+                # object_location.pose.position.y = camera_coords[1]
+                object_location.pose.position.z = camera_coords[2]
 
-            # publish the PoseStamped of the detected color
-            self.detected_color_pose_pub.publish(object_location)
+                # publish the PoseStamped of the detected color
+                self.detected_color_pose_pub.publish(object_location)
 
-            # publish so we can see that in rviz
-            self.object_location_pub.publish(object_location)
+                # publish so we can see that in rviz
+                self.object_location_pub.publish(object_location)
 
-            # print out the coordinates in the odom frame
-            transform = self.get_tf_transform('map','depth_link')
-            if transform:
-                p_camera = do_transform_pose(object_location.pose, transform)
-                
-                p_location = PoseStamped()
-                p_location.header.frame_id = "map"
-                p_location.pose = p_camera
-                p_location.pose.orientation.w = 1.0
-                
-                
-                
-                self.p_color_pose_pub.publish(p_location)
-                
-                print('odom coords: ', p_camera.position)
-                
+                # print out the coordinates in the odom frame
+                transform = self.get_tf_transform('map', 'depth_link')
+                if transform:
+                    p_camera = do_transform_pose(object_location.pose, transform)
 
-            if self.visualisation:
-                # draw bounding box
-                cv2.rectangle(image_color, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    p_location = PoseStamped()
+                    p_location.header.frame_id = "map"
+                    p_location.pose = p_camera
+                    p_location.pose.orientation.w = 1.0
 
-                # resize and adjust for visualization
-                image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)
-                image_depth *= 1.0 / 10.0  # scale for visualization (max range 10.0 m)
+                    self.p_color_pose_pub.publish(p_location)
 
-                cv2.imshow("image depth", image_depth)
-                cv2.imshow("image color", image_color)
-                cv2.waitKey(1)
+                    print('odom coords: ', p_camera.position)
+
+                if self.visualisation:
+                    # draw bounding box
+                    cv2.rectangle(image_color, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                    # resize and adjust for visualization
+                    image_color = cv2.resize(image_color, (0, 0), fx=0.5, fy=0.5)
+                    image_depth *= 1.0 / 10.0  # scale for visualization (max range 10.0 m)
+
+                    cv2.imshow("image depth", image_depth)
+                    cv2.imshow("image color", image_color)
+                    cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
