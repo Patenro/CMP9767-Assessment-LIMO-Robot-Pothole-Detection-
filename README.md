@@ -56,9 +56,11 @@ To get started with the project, follow the steps outlined below:
     ros2 launch limo_navigation limo_navigation.launch.py use_sim_time:=true map:=/path/to/your/map.yaml
     
     # Command to launch pothole detector
-    ros2 launch limo_assessment pothole_detector.launch.py
+    ```bash
+    cd src/limo_assessment/launch
+    ros2 launch pothole_detector.launch.py
     ```
-
+    ```
 ## Project Components
 
 ### Python Executables
