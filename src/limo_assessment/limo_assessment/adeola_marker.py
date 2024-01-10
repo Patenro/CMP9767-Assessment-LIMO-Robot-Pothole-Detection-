@@ -11,7 +11,7 @@ import math
 class PoseMarkerSubscriber(Node):
 
     def __init__(self):
-        super().__init__('pose_marker_subscriber')
+        super().__init__('adeola_marker')
         self.subscription = self.create_subscription(
             PoseStamped,
             '/limo/p_color_pose',

@@ -14,7 +14,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 
 class ImageConverter(Node):
     def __init__(self):
-        super().__init__("Pothole_Severity_Detector")
+        super().__init__("adeola_severity_report")
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(
             Image,

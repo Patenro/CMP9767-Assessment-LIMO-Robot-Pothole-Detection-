@@ -6,7 +6,7 @@ from sensor_msgs.msg import LaserScan
 
 class Mover(Node):
     def __init__(self):#Initialize the node
-        super().__init__('autonomous_navigation')
+        super().__init__('adeola_autonomous_navigation1')
         self.publisher = self.create_publisher(Twist, "/cmd_vel", 10) #Publish to /cmd_vel
         self.subscriber = self.create_subscription(LaserScan, "/scan", self.laserscan_callback, 10)#Subscribe to /scan
         self.get_logger().info('THE ROBOT IS AUTONOMOUS NOW')#Log that the robot is autonomous

@@ -17,7 +17,7 @@ class Mover(Node):
         to listen to lasr scans and a Publisher to control
         the robot
         """
-        super().__init__('autonomous_navigation')
+        super().__init__('adeola_autonomous_navigation2')
         self.publisher = self.create_publisher(Twist, "/cmd_vel", 10)
         self.subscriber = self.create_subscription(LaserScan, "/scan", self.laserscan_callback, 10)
         self.get_logger().info('THE ROBOT IS AUTONOMOUS NOW')

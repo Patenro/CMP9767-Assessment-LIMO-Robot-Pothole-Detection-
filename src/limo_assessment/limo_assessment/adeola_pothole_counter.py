@@ -9,7 +9,7 @@ from cv_bridge import CvBridge
 
 class ColorMappingNode(Node):
     def __init__(self):
-        super().__init__('color_mapping_node')
+        super().__init__('adeola_pothole_counter')
 
         # Initialize the centroid tracker and other variables
         self.ct = cv2.TrackerCSRT_create()
@@ -38,7 +38,7 @@ class ColorMappingNode(Node):
 
     def print_max_sum_total(self, current_sum_total):
         self.max_sum_total = max(current_sum_total, self.max_sum_total)
-        print(f"Total Pothole Count: {self.max_sum_total}")
+        self.get_logger().info(f"Total Pothole Count: {self.max_sum_total}")
 
     def image_callback(self, msg):
         # Convert the ROS Image message to a BGR image

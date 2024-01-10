@@ -28,7 +28,7 @@ class ObjectDetector(Node):
     color2depth_aspect = 1.0  # for a simulated camera
 
     def __init__(self):
-        super().__init__('image_projection_3')
+        super().__init__('adeola_posedetector2')
         self.bridge = CvBridge()
 
         self.camera_info_sub = self.create_subscription(CameraInfo, '/limo/depth_camera_link/camera_info',
