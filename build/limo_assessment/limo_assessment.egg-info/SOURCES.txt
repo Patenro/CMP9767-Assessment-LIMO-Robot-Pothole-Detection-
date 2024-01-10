@@ -16,6 +16,7 @@ limo_assessment/adeola_posedetector1.py
 limo_assessment/adeola_posedetector2.py
 limo_assessment/adeola_pothole_counter.py
 limo_assessment/adeola_severity_report.py
+limo_assessment/adeola_severity_report2.py
 resource/limo_assessment
 test/test_copyright.py
 test/test_flake8.py

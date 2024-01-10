@@ -1,0 +1,17 @@
+Pothole Severity Log
+Pothole Severity: 9847.5, Level: Dangerously Severe
+Pothole Severity: 856.0, Level: Slightly Severe
+Pothole Severity: 733.0, Level: Slightly Severe
+Pothole Severity: 1054.0, Level: Slightly Severe
+Pothole Severity: 5738.5, Level: Highly Severe
+Pothole Severity: 3128.0, Level: Moderately Severe
+Pothole Severity: 224.0, Level: Slightly Severe
+Pothole Severity: 4774.5, Level: Highly Severe
+Pothole Severity: 1700.5, Level: Moderately Severe
+Pothole Severity: 3118.0, Level: Moderately Severe
+Pothole Severity: 5229.5, Level: Highly Severe
+Pothole Severity: 7101.5, Level: Dangerously Severe
+Pothole Severity: 6475.0, Level: Dangerously Severe
+Pothole Severity: 5627.5, Level: Highly Severe
+Pothole Severity: 2539.0, Level: Moderately Severe
+Pothole Severity: 6612.5, Level: Dangerously Severe

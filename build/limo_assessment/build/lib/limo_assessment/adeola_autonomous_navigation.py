@@ -31,7 +31,7 @@ class Mover(Node):
         elif min_dist < 0.3:
             t.linear.x = -0.5
         else:
-            t.linear.x = 0.3
+            t.linear.x = 0.2
         self.publisher.publish(t)
 
 

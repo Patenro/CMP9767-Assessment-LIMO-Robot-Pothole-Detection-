@@ -2,7 +2,6 @@
 import rclpy
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from rclpy.node import Node
 from rclpy import qos
 from cv2 import namedWindow, resize
@@ -15,7 +14,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 
 class ImageConverter(Node):
     def __init__(self):
-        super().__init__("Pothole_Severity_Detector")
+        super().__init__("severity_report")
         self.bridge = CvBridge()
         self.image_sub = self.create_subscription(
             Image,
@@ -34,14 +33,13 @@ class ImageConverter(Node):
         self.depth_image = None
         self.unique_colors = {}
         self.logger = self.get_logger()
+        self.logger.info('REPORT NODE INITIALIZED')
 
         # Open log file for writing, overwriting previous content
         self.log_file_path = "severity_log.txt"
         with open(self.log_file_path, "w") as file:
             file.write("Pothole Severity Log\n")
         self.log_file = open(self.log_file_path, "a")
-
-        self.severities_list = []  # Initialize list to store severities
 
     def __del__(self):
         # Close the log file when the object is destroyed
@@ -132,10 +130,16 @@ class ImageConverter(Node):
                     if pixel_color not in self.unique_colors:
                         self.unique_colors[pixel_color] = 1
 
+                    # Append severity level to the log file
+                    severity_level = self.get_severity_level(area)
+                    #self.log_file.write(f"Pothole Severity: {area:.2f}, Level: {severity_level}\n")
+                    #self.log_file.flush()
+
         return contours, contours_area, severities, closest_contour
 
     def image_callback(self, data):
         namedWindow("Image window showing the distance to each pothole and their severity")
+        # namedWindow("Masked")
 
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         self.cv_image = resize(self.cv_image, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
@@ -150,49 +154,22 @@ class ImageConverter(Node):
         contours, contours_area, severities, closest_contour = self.search_contours(mask)
 
         cv2.imshow("Image window showing the distance to each pothole and their severity", self.cv_image)
+        # cv2.imshow("Masked", mask)
         cv2.waitKey(1)
 
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
-            severity_level = self.get_severity_level(severity)
-            self.logger.info(f"Severity of closest color: {severity}, Level: {severity_level}")
-            self.log_file.write(f"Pothole Severity: {severity}, Level: {severity_level}\n")
+            self.logger.info(f"Severity of closest color: {severity}, Level: {self.get_severity_level(severity)}")
+            self.log_file.write(f"Pothole Severity: {severity}, Level: {self.get_severity_level(severity)}\n")
             self.log_file.flush()
-
-            # Only add severity of the closest contour to the list
-            self.severities_list.append(severity)
-
-            # Plot the bar graph for all contours
-            self.plot_bar_graph()
 
     def depth_callback(self, data):
         self.depth_image = self.bridge.imgmsg_to_cv2(data, "passthrough")
 
-    def plot_bar_graph(self):
-        if self.severities_list:
-            # Count occurrences of each severity level in the list
-            severity_levels = ["Slightly Severe", "Moderately Severe", "Highly Severe", "Dangerously Severe"]
-            severity_values = [self.get_severity_level(severity) for severity in self.severities_list]
-            severity_counts = {level: severity_values.count(level) for level in severity_levels}
-
-            # Plot the bar graph
-            plt.bar(severity_counts.keys(), severity_counts.values(), color=['blue', 'orange', 'green', 'red'])
-            plt.xlabel('Severity Level')
-            plt.ylabel('Count')
-            plt.title('Pothole Severity Distribution (All Contours)')
-            plt.savefig('pothole_severity_report.png')
-            plt.show(block=False)
-            plt.pause(0.001)
-
 def main(args=None):
     rclpy.init(args=args)
     image_converter = ImageConverter()
-
-    try:
-        rclpy.spin(image_converter)
-    except KeyboardInterrupt:
-        pass
-
+    rclpy.spin(image_converter)
     image_converter.destroy_node()
     rclpy.shutdown()
 
