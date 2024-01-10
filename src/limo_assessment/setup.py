@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from setuptools import find_packages, setup
 
 package_name = 'limo_assessment'
@@ -15,20 +14,19 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='adeola',
-    maintainer_email='27492286@students.lincoln.ac.uk',
+    maintainer_email='adeola@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "adeola_pothole_counter = limo_assessment.adeola_pothole_counter:main",
-            "adeola_autonomous_navigation1 = limo_assessment.adeola_autonomous_navigation1:main",
-            "adeola_autonomous_navigation1 = limo_assessment.adeola_autonomous_navigation2:main",
+            "pothole_counter = limo_assessment.adeola_pothole_counter:main",
+            "autonomous_navigation = limo_assessment.adeola_autonomous_navigation:main",
+            "autonomous_navigation1 = limo_assessment.adeola_autonomous_navigation2:main",
             "adeola_marker = limo_assessment.adeola_marker:main",
-            "adeola_posedetector1 = limo_assessment.adeola_posedetector1:main",
+            "adeola_posedetector = limo_assessment.adeola_posedetector1:main",
             "adeola_posedetector2 = limo_assessment.adeola_posedetector2:main",
-            "adeola_severity_report = limo_assessment.adeola_severity_report:main"
-            
+            "adeola_severity_report = limo_assessment.adeola_severity_report:main",
             
         ],
     },

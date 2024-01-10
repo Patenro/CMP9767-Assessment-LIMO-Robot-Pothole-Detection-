@@ -1,0 +1,66 @@
+[0.000000] (-) TimerEvent: {}
+[0.000272] (limo_assessment) JobQueued: {'identifier': 'limo_assessment', 'dependencies': OrderedDict()}
+[0.000467] (limo_assessment) JobStarted: {'identifier': 'limo_assessment'}
+[0.099880] (-) TimerEvent: {}
+[0.200194] (-) TimerEvent: {}
+[0.300419] (-) TimerEvent: {}
+[0.400664] (-) TimerEvent: {}
+[0.500915] (-) TimerEvent: {}
+[0.601166] (-) TimerEvent: {}
+[0.701425] (-) TimerEvent: {}
+[0.726999] (limo_assessment) Command: {'cmd': ['/usr/bin/python3', 'setup.py', 'egg_info', '--egg-base', '../../build/limo_assessment', 'build', '--build-base', '/home/adeola/CMP9767-Assessment/build/limo_assessment/build', 'install', '--record', '/home/adeola/CMP9767-Assessment/build/limo_assessment/install.log', '--single-version-externally-managed'], 'cwd': '/home/adeola/CMP9767-Assessment/src/limo_assessment', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'LANGUAGE': 'en_GB:en', 'USER': 'adeola', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/adeola/Documents/limo_ros2/install/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib', 'HOME': '/home/adeola', 'OLDPWD': '/home/adeola', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'SYSTEMD_EXEC_PID': '2222', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'COLCON_PREFIX_PATH': '/home/adeola/CMP9767-Assessment/install:/home/adeola/Documents/limo_ros2/install', 'ROS_DISTRO': 'humble', 'GTK_IM_MODULE': 'ibus', 'LOGNAME': 'adeola', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'adeola', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'ROS_LOCALHOST_ONLY': '1', 'WINDOWPATH': '2', 'PATH': '/opt/ros/humble/bin:/home/adeola/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/adeola-Nitro-AN515-57:@/tmp/.ICE-unix/2198,unix/adeola-Nitro-AN515-57:/tmp/.ICE-unix/2198', 'XDG_MENU_PREFIX': 'gnome-', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/bc8cd56b_638d_4deb_bd32_775d5d247870', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'GNOME_TERMINAL_SERVICE': ':1.151', 'SSH_AGENT_LAUNCHER': 'gnome-keyring', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'ROS_DOMAIN_ID': '0', 'AMENT_PREFIX_PATH': '/home/adeola/Documents/limo_ros2/install:/home/adeola/CMP9767-Assessment/install/limo_assessment:/opt/ros/humble', 'SHELL': '/bin/bash', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/adeola/CMP9767-Assessment/build/limo_assessment', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/adeola/CMP9767-Assessment/build/limo_assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:/home/adeola/Documents/limo_ros2/install/local/lib/python3.10/dist-packages:/home/adeola/Documents/limo_ros2/install/lib/python3.10/site-packages:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages', 'COLCON': '1', 'VTE_VERSION': '6800', 'CMAKE_PREFIX_PATH': '/home/adeola/Documents/limo_ros2/install'}, 'shell': False}
+[0.801588] (-) TimerEvent: {}
+[0.895576] (limo_assessment) StdoutLine: {'line': b'running egg_info\n'}
+[0.901665] (-) TimerEvent: {}
+[0.908359] (limo_assessment) StdoutLine: {'line': b'writing ../../build/limo_assessment/limo_assessment.egg-info/PKG-INFO\n'}
+[0.908658] (limo_assessment) StdoutLine: {'line': b'writing dependency_links to ../../build/limo_assessment/limo_assessment.egg-info/dependency_links.txt\n'}
+[0.908852] (limo_assessment) StdoutLine: {'line': b'writing entry points to ../../build/limo_assessment/limo_assessment.egg-info/entry_points.txt\n'}
+[0.909017] (limo_assessment) StdoutLine: {'line': b'writing requirements to ../../build/limo_assessment/limo_assessment.egg-info/requires.txt\n'}
+[0.909117] (limo_assessment) StdoutLine: {'line': b'writing top-level names to ../../build/limo_assessment/limo_assessment.egg-info/top_level.txt\n'}
+[0.936178] (limo_assessment) StdoutLine: {'line': b"reading manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'\n"}
+[0.936908] (limo_assessment) StdoutLine: {'line': b"writing manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'\n"}
+[0.936972] (limo_assessment) StdoutLine: {'line': b'running build\n'}
+[0.937033] (limo_assessment) StdoutLine: {'line': b'running build_py\n'}
+[0.937155] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/__init__.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937253] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_marker.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937343] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_severity_report.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937430] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_posedetector1.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937511] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_pothole_counter.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937593] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_autonomous_navigation2.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937669] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_posedetector2.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937750] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_autonomous_navigation.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.937971] (limo_assessment) StdoutLine: {'line': b'running install\n'}
+[0.938230] (limo_assessment) StderrLine: {'line': b'/home/adeola/.local/lib/python3.10/site-packages/setuptools/_distutils/cmd.py:66: SetuptoolsDeprecationWarning: setup.py install is deprecated.\n'}
+[0.938281] (limo_assessment) StderrLine: {'line': b'!!\n'}
+[0.938317] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.938353] (limo_assessment) StderrLine: {'line': b'        ********************************************************************************\n'}
+[0.938388] (limo_assessment) StderrLine: {'line': b'        Please avoid running ``setup.py`` directly.\n'}
+[0.938423] (limo_assessment) StderrLine: {'line': b'        Instead, use pypa/build, pypa/installer or other\n'}
+[0.938460] (limo_assessment) StderrLine: {'line': b'        standards-based tools.\n'}
+[0.938495] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.938528] (limo_assessment) StderrLine: {'line': b'        See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.\n'}
+[0.938562] (limo_assessment) StderrLine: {'line': b'        ********************************************************************************\n'}
+[0.938597] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.938631] (limo_assessment) StderrLine: {'line': b'!!\n'}
+[0.938665] (limo_assessment) StderrLine: {'line': b'  self.initialize_options()\n'}
+[0.942086] (limo_assessment) StdoutLine: {'line': b'running install_lib\n'}
+[0.955699] (limo_assessment) StdoutLine: {'line': b'running install_data\n'}
+[0.968113] (limo_assessment) StdoutLine: {'line': b'copying resource/limo_assessment -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index/resource_index/packages\n'}
+[0.968260] (limo_assessment) StdoutLine: {'line': b'copying package.xml -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/limo_assessment\n'}
+[0.968303] (limo_assessment) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.981574] (limo_assessment) StdoutLine: {'line': b"removing '/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment-0.0.0-py3.10.egg-info' (and everything under it)\n"}
+[0.981737] (limo_assessment) StdoutLine: {'line': b'Copying ../../build/limo_assessment/limo_assessment.egg-info to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment-0.0.0-py3.10.egg-info\n'}
+[0.982108] (limo_assessment) StdoutLine: {'line': b'running install_scripts\n'}
+[1.001771] (-) TimerEvent: {}
+[1.093365] (limo_assessment) StdoutLine: {'line': b'Installing adeola_marker script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093574] (limo_assessment) StdoutLine: {'line': b'Installing adeola_posedetector script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093668] (limo_assessment) StdoutLine: {'line': b'Installing adeola_posedetector2 script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093709] (limo_assessment) StdoutLine: {'line': b'Installing adeola_severity_report script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093748] (limo_assessment) StdoutLine: {'line': b'Installing autonomous_navigation script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093785] (limo_assessment) StdoutLine: {'line': b'Installing autonomous_navigation1 script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.093848] (limo_assessment) StdoutLine: {'line': b'Installing pothole_counter script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.094254] (limo_assessment) StdoutLine: {'line': b"writing list of installed files to '/home/adeola/CMP9767-Assessment/build/limo_assessment/install.log'\n"}
+[1.101884] (-) TimerEvent: {}
+[1.113750] (limo_assessment) CommandEnded: {'returncode': 0}
+[1.159939] (limo_assessment) JobEnded: {'identifier': 'limo_assessment', 'rc': 0}
+[1.160420] (-) EventReactorShutdown: {}

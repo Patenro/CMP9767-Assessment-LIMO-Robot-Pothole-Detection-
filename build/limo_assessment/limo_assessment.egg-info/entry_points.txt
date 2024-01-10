@@ -1,3 +1,8 @@
 [console_scripts]
-autonomous_navigation = limo_assessment.autonomous_navigation:main
-pothole_counter = limo_assessment.pothole_counter:main
+adeola_marker = limo_assessment.adeola_marker:main
+adeola_posedetector = limo_assessment.adeola_posedetector1:main
+adeola_posedetector2 = limo_assessment.adeola_posedetector2:main
+adeola_severity_report = limo_assessment.adeola_severity_report:main
+autonomous_navigation = limo_assessment.adeola_autonomous_navigation:main
+autonomous_navigation1 = limo_assessment.adeola_autonomous_navigation2:main
+pothole_counter = limo_assessment.adeola_pothole_counter:main

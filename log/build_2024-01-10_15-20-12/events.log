@@ -1,0 +1,90 @@
+[0.000000] (-) TimerEvent: {}
+[0.000134] (limo_assessment) JobQueued: {'identifier': 'limo_assessment', 'dependencies': OrderedDict()}
+[0.000193] (limo_assessment) JobStarted: {'identifier': 'limo_assessment'}
+[0.099510] (-) TimerEvent: {}
+[0.199754] (-) TimerEvent: {}
+[0.299977] (-) TimerEvent: {}
+[0.400205] (-) TimerEvent: {}
+[0.500458] (-) TimerEvent: {}
+[0.600693] (-) TimerEvent: {}
+[0.700931] (-) TimerEvent: {}
+[0.730827] (limo_assessment) Command: {'cmd': ['/usr/bin/python3', 'setup.py', 'egg_info', '--egg-base', '../../build/limo_assessment', 'build', '--build-base', '/home/adeola/CMP9767-Assessment/build/limo_assessment/build', 'install', '--record', '/home/adeola/CMP9767-Assessment/build/limo_assessment/install.log', '--single-version-externally-managed'], 'cwd': '/home/adeola/CMP9767-Assessment/src/limo_assessment', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'LANGUAGE': 'en_GB:en', 'USER': 'adeola', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/adeola/Documents/limo_ros2/install/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib', 'HOME': '/home/adeola', 'OLDPWD': '/home/adeola', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'SYSTEMD_EXEC_PID': '2222', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'COLCON_PREFIX_PATH': '/home/adeola/CMP9767-Assessment/install:/home/adeola/Documents/limo_ros2/install', 'ROS_DISTRO': 'humble', 'GTK_IM_MODULE': 'ibus', 'LOGNAME': 'adeola', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'adeola', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'ROS_LOCALHOST_ONLY': '1', 'WINDOWPATH': '2', 'PATH': '/opt/ros/humble/bin:/home/adeola/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/adeola-Nitro-AN515-57:@/tmp/.ICE-unix/2198,unix/adeola-Nitro-AN515-57:/tmp/.ICE-unix/2198', 'XDG_MENU_PREFIX': 'gnome-', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/bc8cd56b_638d_4deb_bd32_775d5d247870', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'GNOME_TERMINAL_SERVICE': ':1.151', 'SSH_AGENT_LAUNCHER': 'gnome-keyring', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'ROS_DOMAIN_ID': '0', 'AMENT_PREFIX_PATH': '/home/adeola/Documents/limo_ros2/install:/home/adeola/CMP9767-Assessment/install/limo_assessment:/opt/ros/humble', 'SHELL': '/bin/bash', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/adeola/CMP9767-Assessment/build/limo_assessment', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/adeola/CMP9767-Assessment/build/limo_assessment/prefix_override:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:/home/adeola/Documents/limo_ros2/install/local/lib/python3.10/dist-packages:/home/adeola/Documents/limo_ros2/install/lib/python3.10/site-packages:/home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages', 'COLCON': '1', 'VTE_VERSION': '6800', 'CMAKE_PREFIX_PATH': '/home/adeola/Documents/limo_ros2/install'}, 'shell': False}
+[0.801036] (-) TimerEvent: {}
+[0.901337] (-) TimerEvent: {}
+[0.907773] (limo_assessment) StdoutLine: {'line': b'running egg_info\n'}
+[0.908126] (limo_assessment) StdoutLine: {'line': b'creating ../../build/limo_assessment/limo_assessment.egg-info\n'}
+[0.921040] (limo_assessment) StdoutLine: {'line': b'writing ../../build/limo_assessment/limo_assessment.egg-info/PKG-INFO\n'}
+[0.921287] (limo_assessment) StdoutLine: {'line': b'writing dependency_links to ../../build/limo_assessment/limo_assessment.egg-info/dependency_links.txt\n'}
+[0.921631] (limo_assessment) StdoutLine: {'line': b'writing entry points to ../../build/limo_assessment/limo_assessment.egg-info/entry_points.txt\n'}
+[0.921723] (limo_assessment) StdoutLine: {'line': b'writing requirements to ../../build/limo_assessment/limo_assessment.egg-info/requires.txt\n'}
+[0.921886] (limo_assessment) StdoutLine: {'line': b'writing top-level names to ../../build/limo_assessment/limo_assessment.egg-info/top_level.txt\n'}
+[0.922060] (limo_assessment) StdoutLine: {'line': b"writing manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'\n"}
+[0.947551] (limo_assessment) StdoutLine: {'line': b"reading manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'\n"}
+[0.948027] (limo_assessment) StdoutLine: {'line': b"writing manifest file '../../build/limo_assessment/limo_assessment.egg-info/SOURCES.txt'\n"}
+[0.948211] (limo_assessment) StdoutLine: {'line': b'running build\n'}
+[0.948270] (limo_assessment) StdoutLine: {'line': b'running build_py\n'}
+[0.948342] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/build/limo_assessment/build\n'}
+[0.948420] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib\n'}
+[0.948475] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948548] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/__init__.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948650] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_marker.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948723] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_severity_report.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948808] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_posedetector1.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948892] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_pothole_counter.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.948975] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_autonomous_navigation2.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.949052] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_posedetector2.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.949130] (limo_assessment) StdoutLine: {'line': b'copying limo_assessment/adeola_autonomous_navigation.py -> /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment\n'}
+[0.949379] (limo_assessment) StdoutLine: {'line': b'running install\n'}
+[0.949662] (limo_assessment) StderrLine: {'line': b'/home/adeola/.local/lib/python3.10/site-packages/setuptools/_distutils/cmd.py:66: SetuptoolsDeprecationWarning: setup.py install is deprecated.\n'}
+[0.949759] (limo_assessment) StderrLine: {'line': b'!!\n'}
+[0.949800] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.949836] (limo_assessment) StderrLine: {'line': b'        ********************************************************************************\n'}
+[0.949869] (limo_assessment) StderrLine: {'line': b'        Please avoid running ``setup.py`` directly.\n'}
+[0.949902] (limo_assessment) StderrLine: {'line': b'        Instead, use pypa/build, pypa/installer or other\n'}
+[0.949936] (limo_assessment) StderrLine: {'line': b'        standards-based tools.\n'}
+[0.949969] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.950001] (limo_assessment) StderrLine: {'line': b'        See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.\n'}
+[0.950035] (limo_assessment) StderrLine: {'line': b'        ********************************************************************************\n'}
+[0.950068] (limo_assessment) StderrLine: {'line': b'\n'}
+[0.950101] (limo_assessment) StderrLine: {'line': b'!!\n'}
+[0.950133] (limo_assessment) StderrLine: {'line': b'  self.initialize_options()\n'}
+[0.953633] (limo_assessment) StdoutLine: {'line': b'running install_lib\n'}
+[0.966668] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.966809] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/__init__.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.966940] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_marker.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967034] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_severity_report.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967080] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_posedetector1.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967117] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_pothole_counter.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967153] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_autonomous_navigation2.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967215] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_posedetector2.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967250] (limo_assessment) StdoutLine: {'line': b'copying /home/adeola/CMP9767-Assessment/build/limo_assessment/build/lib/limo_assessment/adeola_autonomous_navigation.py -> /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment\n'}
+[0.967527] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/__init__.py to __init__.cpython-310.pyc\n'}
+[0.967678] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_marker.py to adeola_marker.cpython-310.pyc\n'}
+[0.968146] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_severity_report.py to adeola_severity_report.cpython-310.pyc\n'}
+[0.969134] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_posedetector1.py to adeola_posedetector1.cpython-310.pyc\n'}
+[0.970152] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_pothole_counter.py to adeola_pothole_counter.cpython-310.pyc\n'}
+[0.970640] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_autonomous_navigation2.py to adeola_autonomous_navigation2.cpython-310.pyc\n'}
+[0.970937] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_posedetector2.py to adeola_posedetector2.cpython-310.pyc\n'}
+[0.971673] (limo_assessment) StdoutLine: {'line': b'byte-compiling /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment/adeola_autonomous_navigation.py to adeola_autonomous_navigation.cpython-310.pyc\n'}
+[0.971961] (limo_assessment) StdoutLine: {'line': b'running install_data\n'}
+[0.984631] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index\n'}
+[0.984801] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index/resource_index\n'}
+[0.984850] (limo_assessment) StdoutLine: {'line': b'creating /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index/resource_index/packages\n'}
+[0.984887] (limo_assessment) StdoutLine: {'line': b'copying resource/limo_assessment -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/ament_index/resource_index/packages\n'}
+[0.984952] (limo_assessment) StdoutLine: {'line': b'copying package.xml -> /home/adeola/CMP9767-Assessment/install/limo_assessment/share/limo_assessment\n'}
+[0.985012] (limo_assessment) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.998532] (limo_assessment) StdoutLine: {'line': b'Copying ../../build/limo_assessment/limo_assessment.egg-info to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/python3.10/site-packages/limo_assessment-0.0.0-py3.10.egg-info\n'}
+[0.999036] (limo_assessment) StdoutLine: {'line': b'running install_scripts\n'}
+[1.001412] (-) TimerEvent: {}
+[1.101618] (-) TimerEvent: {}
+[1.115860] (limo_assessment) StdoutLine: {'line': b'Installing adeola_marker script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.115999] (limo_assessment) StdoutLine: {'line': b'Installing adeola_posedetector script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116071] (limo_assessment) StdoutLine: {'line': b'Installing adeola_posedetector2 script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116116] (limo_assessment) StdoutLine: {'line': b'Installing adeola_severity_report script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116170] (limo_assessment) StdoutLine: {'line': b'Installing autonomous_navigation script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116222] (limo_assessment) StdoutLine: {'line': b'Installing autonomous_navigation1 script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116298] (limo_assessment) StdoutLine: {'line': b'Installing pothole_counter script to /home/adeola/CMP9767-Assessment/install/limo_assessment/lib/limo_assessment\n'}
+[1.116744] (limo_assessment) StdoutLine: {'line': b"writing list of installed files to '/home/adeola/CMP9767-Assessment/build/limo_assessment/install.log'\n"}
+[1.138919] (limo_assessment) CommandEnded: {'returncode': 0}
+[1.183794] (limo_assessment) JobEnded: {'identifier': 'limo_assessment', 'rc': 0}
+[1.184346] (-) EventReactorShutdown: {}
