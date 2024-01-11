@@ -157,7 +157,7 @@ class ImageConverter(Node):
         if closest_contour is not None:
             severity = cv2.contourArea(closest_contour)
             severity_level = self.get_severity_level(severity)
-            #self.logger.info(f"Severity of closest color: {severity}, Level: {severity_level}")
+            #self.logger.info(f"Severity of closest pothole: {severity}, Level: {severity_level}")
             self.log_file.write(f"Pothole Severity: {severity}, Level: {severity_level}\n")
             self.log_file.flush()
 
