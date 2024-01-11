@@ -88,12 +88,12 @@ The severity report code calculates pothole severity based on area and assigns a
 
 ## Images
 
-![Gazebo World](src/limo_assessment/resource/Display1.png "Gazebo World")
+![Gazebo World](src/limo_assessment/resource/Display3.png "Gazebo World")
 *Gazebo World*
 
 ![Marked Potholes](src/limo_assessment/resource/Display2.png "Marked Potholes")
 *Marked Potholes*
 
-![Severity Report with Bar Graph](src/limo_assessment/resource/Display3.png "Severity Report with Bar Graph")
+![Severity Report with Bar Graph](src/limo_assessment/resource/Display1.png "Severity Report with Bar Graph")
 *Severity Report with Bar Graph*
 
