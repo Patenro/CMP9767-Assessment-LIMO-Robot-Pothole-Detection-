@@ -12,6 +12,8 @@ Pose detectors determine the location of potholes relative to a fixed map using 
 
 A severity report code calculates pothole distances and areas, assigning severity colors. Results are stored in a txt file and visualized through a bar chart, showing pothole counts based on severity. The second severity report code displays severity levels on the terminal and in a txt file. Each time the package is launched, initial values in txt files are cleared, and updated data is stored.
 
+Important Notice: In the launch Python file located in the "launch" folder, directories to the code were utilized instead of node names. We kindly request users to modify each value in the file to reflect their own directory paths. After making these adjustments, please save the file and execute a 'colcon build' command for the package to ensure proper functionality. This step is crucial for adapting the package to individual user environments and ensuring the correct execution of the robotic system.
+
 ## Getting Started
 
 To get started with the project, follow the steps outlined below:
