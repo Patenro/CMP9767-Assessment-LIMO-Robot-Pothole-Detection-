@@ -4,7 +4,13 @@ A software system for a LIMO mobile robot deployed to solve a road inspection ta
 
 ## Overview
 
-Welcome to the CMP9767 Assessment repository! This project focuses on developing a comprehensive software system for a LIMO mobile robot designed for road inspection. The primary objective is to autonomously evaluate road surface quality, particularly in detecting and reporting potholes.
+The robotic system comprises two distinct navigation codes for steering the robot. The first code employs a reactive approach, adjusting the robot's movement based on the number of obstacles detected on either side. Laser distance measurements guide the decision-making process, ensuring responsive maneuvers. In contrast, the second navigation code is simpler, consistently turning right upon obstacle detection, making it suitable for well-known paths and straightforward localization.
+
+The pothole counter utilizes color segmentation and contour drawing to identify and count potholes. An occupancy grid ensures accurate pothole localization, preventing double counting as the robot moves. The count is incrementally updated, and the maximum value is printed, representing the total number of potholes.
+
+Pose detectors determine the location of potholes relative to a fixed map using tf transforms. The information is published to the '/limo/p_color_pose' topic and visualized on RViz. Another pose detector measures distance relative to the robot's odometry, allowing for accuracy comparisons. Marker codes subscribe to pose information, placing markers on coordinates and publishing to '/limo/pose_marker' for visualization on RViz. Clustering is prevented by applying a threshold, and marker IDs are saved in a txt file for reference.
+
+A severity report code calculates pothole distances and areas, assigning severity colors. Results are stored in a txt file and visualized through a bar chart, showing pothole counts based on severity. The second severity report code displays severity levels on the terminal and in a txt file. Each time the package is launched, initial values in txt files are cleared, and updated data is stored.
 
 ## Getting Started
 
