@@ -60,6 +60,13 @@ To get started with the project, follow the steps outlined below:
     ros2 launch pothole_detector.launch.py
    
     ```
+9. **Result Presentaion**
+    ```bash
+    #The text files for the reports and the image for the bar graph is saved in this directory
+    cd src/limo_assessment/launch
+
+    ```
+   
 ## Project Components
 
 ### Python Executables
@@ -71,6 +78,7 @@ The project includes several Python executables to achieve different functionali
 - `adeola_posedetector1.py`: Uses TF transforms to get pothole coordinates relative to the fixed map.
 - `adeola_marker.py`: Subscribes to pothole coordinates and publishes markers for visualization in RViz.
 - `adeola_severity_report.py`: Calculates pothole severity based on area and generates a bar chart.
+
 
 Ensure to update the file paths in the launch file to match your system.
 
